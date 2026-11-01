@@ -1,0 +1,1226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="author" content="Miguel García Pérez">
+<title>Concurso de armonía</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Escenario de concurso: fondo de sala oscuro, partituras sobre "papel" blanco, respuestas en seis colores con forma */
+:root{
+  --stage:#0c262e; --stage2:#123843; --stage3:#1a4a57; --line:#2c6070;
+  --text:#eef6f7; --muted:#a3c4cb; --paper:#ffffff; --ink:#15282e;
+  --accent:#f4a53a; --ok:#2fb56a; --ko:#e2553f;
+  --c0:#d9443c; --c1:#2c6ed4; --c2:#d4920a; --c3:#22935a; --c4:#8a52c6; --c5:#11808a;
+  --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --f-body:'Atkinson Hyperlegible','Trebuchet MS',Verdana,system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--stage);color:var(--text);font:17px/1.45 var(--f-body);
+  background-image:radial-gradient(1200px 600px at 85% -10%,var(--stage3),transparent 60%),repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#app{max-width:1400px;margin:0 auto;padding-block:14px 28px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-body);font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1}
+.btn{border:2px solid var(--line);background:var(--stage2);border-radius:12px;padding:10px 16px;cursor:pointer;font-weight:700;line-height:1.15;transition:transform .1s,background .15s}
+.btn:hover{background:var(--stage3)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#2a1700}
+.btn.primary:hover{background:#ffb653}
+.btn.big{font-size:1.25rem;padding:14px 26px;border-radius:14px}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.card{background:var(--stage2);border:1px solid var(--line);border-radius:20px;padding:20px}
+.paper{background:var(--paper);color:var(--ink);border-radius:16px;padding:6px 10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.paper svg{display:block;width:100%;height:auto;margin:0 auto}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--stage3);border-radius:999px;padding:5px 14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.soft{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:400}
+.warn{background:rgba(244,165,58,.14);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;font-size:.95rem}
+/* cifrados */
+.fg{display:inline-flex;flex-direction:column;align-items:center;line-height:1;vertical-align:middle;margin-left:.12em;font-size:.66em;position:relative;top:-.08em}
+.fg b{font-weight:700}
+.sl{position:relative;display:inline-block;font-style:normal;padding:0 .08em}
+.sl::after{content:'';position:absolute;left:50%;top:14%;height:72%;border-left:.1em solid currentColor;transform:rotate(36deg)}
+/* inicio */
+.home{display:grid;gap:22px;padding-top:4vh}
+.home h1{font-size:clamp(2.2rem,6vw,4.4rem);font-weight:800;line-height:1}
+.home .lead{max-width:62ch;color:var(--muted);margin:0}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.role{display:grid;gap:10px;align-content:start}
+.role h2{font-size:1.5rem}
+.role p{margin:0;color:var(--muted)}
+/* toasts */
+#toasts{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:grid;gap:6px;z-index:90;width:min(92vw,520px);pointer-events:none}
+#toasts div{background:var(--paper);color:var(--ink);border-radius:12px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-weight:700;animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ===== pantalla de clase ===== */
+.lobby{display:grid;grid-template-columns:minmax(260px,400px) 1fr;gap:22px;align-items:start}
+@media (max-width:860px){.lobby{grid-template-columns:1fr}}
+.join{display:grid;gap:10px;justify-items:center;text-align:center}
+.qr{background:#fff;border-radius:14px;padding:10px;width:100%;max-width:330px}
+.qr svg{display:block;width:100%;height:auto}
+.url{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem;word-break:break-all;margin:0;color:var(--muted)}
+.bigcode{font-family:var(--f-display);font-weight:800;font-size:clamp(3.2rem,8vw,5.4rem);letter-spacing:.12em;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.setup{display:grid;gap:18px;min-width:0}
+.setup .title{font-size:clamp(2rem,4.4vw,3.4rem);font-weight:800;line-height:1.02}
+.setup .title small{display:block;font-family:var(--f-body);font-size:.36em;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:8px}
+.opt{display:grid;gap:6px}
+.lbl{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.segb{border:2px solid var(--line);background:transparent;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:700}
+.segb.on{background:var(--text);color:var(--stage);border-color:var(--text)}
+.opt small{color:var(--muted)}
+.players{display:flex;flex-wrap:wrap;gap:10px;min-height:64px}
+.pchip{display:flex;align-items:center;gap:8px;background:var(--stage3);border-radius:999px;padding:4px 14px 4px 4px;font-weight:700;animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+.pchip small{font-weight:400;color:var(--muted)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.empty{color:var(--muted);font-style:italic;align-self:center}
+/* pregunta */
+.qbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.host .qbar{padding-right:0;padding-top:46px}
+@media (max-width:860px){.host .qbar{padding-right:0;padding-top:44px}}
+.host .setup{padding-top:34px}
+.room{font-variant-numeric:tabular-nums;color:var(--muted)}
+.room b{color:var(--accent);font-size:1.15em;letter-spacing:.06em}
+.qhead{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;margin-bottom:16px}
+.prompt{font-size:clamp(1.6rem,3.2vw,2.7rem);font-weight:700;line-height:1.12}
+.prompt .sub{font-family:var(--f-body);font-weight:400;font-size:.62em;color:var(--muted)}
+.ring{position:relative;width:110px;height:110px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ring.low b{color:var(--ko)}
+.qvis{max-width:620px;margin:0 auto 18px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{position:relative;display:flex;align-items:center;gap:14px;border:0;border-radius:14px;padding:16px 18px;color:#fff;text-align:left;font-weight:700;font-size:clamp(1.05rem,1.9vw,1.6rem);line-height:1.2;min-height:76px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.22);min-width:0}
+.tile span{min-width:0;overflow-wrap:anywhere}
+.tile small{display:block;font-weight:400;font-size:.62em;opacity:.92;margin-top:3px}
+.tile .shp{font-style:normal;font-size:1.5em;line-height:1;width:1.2em;text-align:center;flex:none;opacity:.95}
+.tile em{margin-left:auto;font-style:normal;font-family:var(--f-display);font-size:1.4em;font-variant-numeric:tabular-nums;padding-left:10px}
+.t0{background:var(--c0)}.t1{background:var(--c1)}.t2{background:var(--c2)}.t3{background:var(--c3)}.t4{background:var(--c4)}.t5{background:var(--c5)}
+.tile.dim{opacity:.28}
+.tile.right{outline:4px solid #fff;outline-offset:3px}
+.tile.right::after{content:'✔';position:absolute;right:-10px;top:-12px;background:var(--ok);color:#fff;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-size:1.1rem;border:3px solid var(--stage)}
+.buildnote{text-align:center;font-family:var(--f-display);font-size:clamp(1.3rem,2.6vw,2rem);font-weight:700;margin:6px 0 0}
+.qfoot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+.answered{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.answered b{font-family:var(--f-display);font-size:2rem;font-variant-numeric:tabular-nums}
+.avrow{display:flex;flex-wrap:wrap;gap:4px}
+.exp{background:var(--stage2);border-left:6px solid var(--accent);border-radius:12px;padding:12px 16px;margin:16px 0 0;font-size:1.15rem;max-width:80ch}
+.sol{display:grid;grid-template-columns:minmax(0,560px) 1fr;gap:20px;align-items:center}
+@media (max-width:760px){.sol{grid-template-columns:1fr}}
+.solstat b{font-family:var(--f-display);font-size:3rem;color:var(--ok);line-height:1}
+/* clasificación */
+.rank{display:grid;gap:8px;max-width:900px;margin:0 auto}
+.rank h1{font-size:clamp(2rem,4vw,3rem);text-align:center;margin-bottom:8px}
+.rrow{display:grid;grid-template-columns:3.2rem auto 1fr auto auto;gap:14px;align-items:center;background:var(--stage2);border:1px solid var(--line);border-radius:14px;padding:8px 16px;animation:rin .4s ease-out both}
+.rrow .pos{font-family:var(--f-display);font-weight:800;font-size:1.8rem;text-align:center;font-variant-numeric:tabular-nums}
+.rrow .nm{font-weight:700;font-size:1.3rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .nm small{display:block;font-weight:400;font-size:.7em;color:var(--muted)}
+.rrow .sc{font-family:var(--f-display);font-weight:800;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.rrow .dl{font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums;min-width:4.5em;text-align:right}
+.rrow.top1{border-color:var(--accent);background:linear-gradient(90deg,rgba(244,165,58,.22),var(--stage2))}
+.mv{font-size:.8rem;margin-left:4px}.mv.up{color:var(--ok)}.mv.dn{color:var(--ko)}
+@keyframes rin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+/* podio */
+.end{display:grid;gap:22px;justify-items:center;position:relative;overflow:hidden;padding-top:10px}
+.end h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:800}
+.pdrow{display:grid;grid-template-columns:repeat(3,minmax(0,220px));gap:14px;align-items:end;width:100%;justify-content:center}
+.pd{display:grid;justify-items:center;gap:6px;text-align:center;min-width:0}
+.pd b{font-size:1.25rem;overflow-wrap:anywhere}
+.pd span{color:var(--muted);font-variant-numeric:tabular-nums}
+.pdbox{width:100%;border-radius:14px 14px 0 0;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:2.4rem;color:#2a1700}
+.p1 .pdbox{height:170px;background:var(--accent)}.p2 .pdbox{height:120px;background:#c9d6da}.p3 .pdbox{height:90px;background:#d79a62}
+.pdav{animation:pop .7s cubic-bezier(.3,1.6,.5,1) both}.p1 .pdav{animation-delay:.9s}.p2 .pdav{animation-delay:.5s}.p3 .pdav{animation-delay:.2s}
+.conf{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.conf i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;width:100%}
+.team{display:flex;flex-wrap:wrap;gap:8px;align-content:start;background:var(--stage2);border:1px solid var(--line);border-top:6px solid var(--tc);border-radius:14px;padding:10px;min-width:0}
+.team h3{width:100%;font-size:1.1rem;color:var(--text)}
+.team h3 small{font-family:var(--f-body);font-weight:400;color:var(--muted);margin-left:4px}
+.team .pchip{cursor:pointer}
+.team .pchip:hover{outline:2px solid var(--tc)}
+.trow{border-left:10px solid var(--tc)}
+.avstack{display:flex;align-items:center;padding-left:10px}
+.avstack svg{margin-left:-10px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.tbadge{display:inline-block;background:var(--tc);color:#fff;font-weight:700;border-radius:999px;padding:4px 14px}
+.tpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.tpick button{border:3px solid transparent;background:var(--tc);color:#fff;border-radius:12px;padding:10px;font-weight:700;cursor:pointer;text-align:left}
+.tpick button small{display:block;font-weight:400;opacity:.9}
+.tpick button[aria-checked="true"]{border-color:#fff;box-shadow:0 0 0 3px var(--accent)}
+.hintb{width:100%;display:grid;gap:2px;justify-items:center;border-style:dashed}
+.hintb small{font-weight:400;color:var(--muted)}
+.hintbox{background:rgba(244,165,58,.14);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;margin:0}
+.resume{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;border-color:var(--accent)}
+.resume h2{font-size:1.5rem}
+.qrov{position:fixed;inset:0;z-index:60;background:rgba(5,20,25,.82);display:grid;place-items:center;padding:16px}
+.qrov .card{width:min(440px,100%);max-height:calc(100vh - 32px);overflow:auto}
+#endb.arm{background:var(--ko);border-color:var(--ko);color:#fff}
+.qr.blurred{position:relative}
+.qr.blurred svg{filter:blur(14px)}
+.qr.blurred .btn{position:absolute;inset:auto 0 0;margin:auto;top:0;width:max-content;height:max-content;left:0;right:0}
+.answerbox{display:grid;gap:8px;background:var(--stage2);border:2px solid var(--ok);border-radius:16px;padding:12px}
+.big-ans{font-family:var(--f-display);font-size:1.6rem;font-weight:800;margin:0;text-align:center}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;color:var(--accent);font-size:1.2em}
+.bigfig{font-size:1.9em;line-height:1}
+.tile.gone{opacity:.18;filter:grayscale(1);cursor:default}
+.streak{font-weight:700;color:var(--accent);margin:0;font-size:1.15rem}
+.rules{margin:0;color:var(--muted);max-width:70ch}
+.rrow .dl small.bn{display:block;font-size:.75rem;color:var(--accent)}
+
+/* pantalla completa */
+.tools{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 32px);position:fixed;right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));z-index:20;display:flex;gap:6px}
+.tools .btn{font-size:.85rem;padding:6px 10px;background:var(--stage)}
+/* ===== móvil ===== */
+.phone{max-width:560px;margin:0 auto;display:grid;gap:14px}
+.phone h1{font-size:1.9rem;font-weight:800}
+.field{display:grid;gap:6px}
+.field label,.field .lbl{font-weight:700}
+.field input{font:inherit;font-size:1.15rem;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--stage);color:var(--text);width:100%}
+.avpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;justify-items:center}
+.avpick button{position:relative;border:3px solid transparent;background:transparent;border-radius:50%;padding:2px;cursor:pointer;line-height:0}
+.avpick button[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.avpick button.taken{opacity:.35;filter:grayscale(.9);cursor:not-allowed}
+.avpick .lk{position:absolute;right:-3px;bottom:-3px;font-style:normal;font-size:14px;line-height:1}
+.avcard{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--stage);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.avcard b{font-size:1.15rem}
+.avcard small{display:block;color:var(--muted)}
+.avcard p{margin:4px 0 0;font-size:.95rem}
+.avcard .avmel{color:var(--accent);margin-top:4px}
+.avbig{position:relative;line-height:0}
+.avcard.pop .avbig svg{animation:pop .55s cubic-bezier(.3,1.6,.5,1)}
+.nt{position:absolute;left:38px;top:30px;font-style:normal;font-size:20px;line-height:1;color:var(--accent);opacity:0;pointer-events:none;animation:nfly 1.3s ease-out forwards}
+.nt.n1{--dx:-34px;--dy:-46px}.nt.n2{--dx:30px;--dy:-52px;animation-delay:.08s;color:#ff7a6e}.nt.n3{--dx:-40px;--dy:-12px;animation-delay:.16s;color:#5fd59a}.nt.n4{--dx:36px;--dy:-14px;animation-delay:.22s;color:#c49bff}
+@keyframes nfly{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
+.avcred{font-size:.85rem;color:var(--muted)}
+.avcred summary{cursor:pointer}
+.avcred a{color:var(--muted)}
+.msg{min-height:1.4em;color:var(--accent);font-weight:700;margin:0}
+.ptop{display:flex;align-items:center;gap:8px;justify-content:space-between;font-weight:700;font-variant-numeric:tabular-nums}
+.me{display:flex;align-items:center;gap:6px;min-width:0}
+.me span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbar{height:10px;border-radius:6px;background:var(--stage3);overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--accent),#ffd07a);transition:width .25s linear}
+.pprompt{font-size:1.2rem;font-weight:700;margin:0}
+.pprompt .sub{font-weight:400;color:var(--muted);font-size:.85em}
+.ptiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ptiles .tile{font-size:1.15rem;min-height:92px;cursor:pointer;padding:12px}
+.ptiles .tile:active{transform:scale(.97)}
+.ptiles.one{grid-template-columns:1fr}
+.bank{display:grid;gap:6px}
+.bank svg,.tgt svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.bank [data-n],.tgt [data-p]{cursor:pointer}
+.tgt{border-radius:16px}
+.center{text-align:center;justify-items:center}
+.state{display:grid;gap:12px;justify-items:center;text-align:center;padding:26px 16px}
+.state h2{font-size:1.8rem}
+.verdict{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:1}
+.verdict.ok{color:var(--ok)}.verdict.ko{color:var(--ko)}
+.plus{font-family:var(--f-display);font-size:1.6rem;font-weight:800;color:var(--accent)}
+.stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.stats div{background:var(--stage2);border:1px solid var(--line);border-radius:12px;padding:8px 16px;font-variant-numeric:tabular-nums}
+.stats b{display:block;font-family:var(--f-display);font-size:1.6rem}
+.wiggle{animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.nt,.conf{display:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts" aria-live="polite"></div>
+<script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+// Retratos de compositores y compositoras (dibujos propios, viewBox 0 0 100 100)
+(function(){
+const SK={light:['#f3d3b6','#d9a888','#c98d72'],fair:['#f6dcc6','#e0b49a','#cf977d'],olive:['#e6bf98','#c99a73','#b07e5b'],dark:['#8a5a3c','#6d4329','#5a3520'],ruddy:['#eec3a4','#d39a7c','#bf8064'],pale:['#f8e4d4','#e6c2aa','#d4a68c']};
+const OUT={
+ oval:'M35,46 C35,29 65,29 65,46 C65,60 58,71 50,71 C42,71 35,60 35,46Z',
+ round:'M35,46 C35,29 65,29 65,46 C65,62 60,72 50,72 C40,72 35,62 35,46Z',
+ square:'M35,46 C35,29 65,29 65,46 C65,59 63,67 57.5,70 Q50,72.6 42.5,70 C37,67 35,59 35,46Z',
+ heavy:'M34.5,46 C34.5,29 65.5,29 65.5,46 C66,60 64,69 57,72.5 Q50,75 43,72.5 C36,69 34,60 34.5,46Z',
+ narrow:'M36,46 C36,29 64,29 64,46 C64,61 57,72 50,72 C43,72 36,61 36,46Z'};
+function face(o){const[s,sh,sd]=SK[o.skin||'light'];const ey=o.eyeY||49;const iris=o.iris||'#4a3526';
+  const brow=o.brow||'#5a4330';const bw=o.browW||1.6;const er=o.er||1;const my=o.my||0;
+  const sx=o.w||1,sy=o.h||1;const T=(sx!==1||sy!==1)?` transform="translate(50 46) scale(${sx} ${sy}) translate(-50 -46)"`:'';
+  const chinY=46+25*sy;
+  const browL=o.frown?`M39,${ey-6} Q43,${ey-8.2} 47,${ey-5.6}`:`M39,${ey-5.6} Q43,${ey-8} 47,${ey-6.4}`;
+  const browR=o.frown?`M53,${ey-5.6} Q57,${ey-8.2} 61,${ey-6}`:`M53,${ey-6.4} Q57,${ey-8} 61,${ey-5.6}`;
+  const mouth=o.mouth||`M45.5,64 Q50,${o.smile?67:65.6} 54.5,64`;
+  const lips=o.lips?`<path d="M45.6,63.8 Q48,62.6 50,63.4 Q52,62.6 54.4,63.8 Q50,67 45.6,63.8Z" fill="${o.lips}" opacity=".85"/>`:'';
+  const outline=o.shape?OUT[o.shape]:`M35,46 C35,29 65,29 65,46 C65,${o.round?62:60} ${o.round?60:58},${o.round?72:71} 50,${o.round?72:71} C${o.round?40:42},${o.round?72:71} 35,${o.round?62:60} 35,46Z`;
+  const ex=15.4*sx;
+  let nose;
+  switch(o.nose){
+   case 'long':nose=`<path d="M50.6,${ey+1} Q49.6,${ey+9} 47.8,${ey+11.4} Q50,${ey+13} 53,${ey+11.4}" stroke="${sd}" stroke-width="1.15" fill="none" stroke-linecap="round"/><path d="M46.6,${ey+10.4} Q46.2,${ey+12} 47.6,${ey+12.2} M53.6,${ey+10.6} Q54,${ey+12} 52.8,${ey+12.2}" stroke="${sd}" stroke-width=".8" fill="none" opacity=".7"/>`;break;
+   case 'hook':nose=`<path d="M50.4,${ey} Q53.4,${ey+5} 51.2,${ey+9.6} Q49.6,${ey+12.2} 47.4,${ey+11.6} M47.4,${ey+11.6} Q49.6,${ey+13.4} 53.2,${ey+12}" stroke="${sd}" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M46,${ey+10.2} Q45.4,${ey+12} 47.2,${ey+12.4} M54.2,${ey+10.4} Q54.8,${ey+12} 53.2,${ey+12.3}" stroke="${sd}" stroke-width=".85" fill="none" opacity=".75"/><path d="M51.2,${ey+2} Q53.2,${ey+5.6} 51.6,${ey+9.4}" stroke="#fff" stroke-width=".9" opacity=".25" fill="none"/>`;break;
+   case 'big':nose=`<path d="M50.6,${ey+1} Q49.4,${ey+8} 48,${ey+10.2}" stroke="${sd}" stroke-width="1.15" fill="none" stroke-linecap="round"/><ellipse cx="50.2" cy="${ey+10.6}" rx="3.4" ry="2.3" fill="${sd}" opacity=".28"/><path d="M45.4,${ey+9.6} Q44.6,${ey+12} 47.4,${ey+12.2} Q50,${ey+13.4} 52.8,${ey+12.2} Q55.6,${ey+12} 54.8,${ey+9.6}" stroke="${sd}" stroke-width="1" fill="none" stroke-linecap="round"/>`;break;
+   case 'small':nose=`<path d="M50.4,${ey+3} Q49.4,${ey+7.6} 48.8,${ey+8.8} Q50,${ey+9.8} 51.8,${ey+9}" stroke="${sd}" stroke-width="1" fill="none" stroke-linecap="round"/>`;break;
+   default:nose=`<path d="M50.5,${ey+1} Q49,${ey+8} 48.2,${ey+9.6} Q50,${ey+11} 52.6,${ey+9.8}" stroke="${sd}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
+  }
+  const lid=o.lids?`<path d="M${43-3.6*er},${ey-.2} Q43,${ey-2.6*er-.6} ${43+3.6*er},${ey-.2} L${43+3.6*er},${ey-1.2*er} Q43,${ey-3*er-1} ${43-3.6*er},${ey-1.2*er}Z M${57-3.6*er},${ey-.2} Q57,${ey-2.6*er-.6} ${57+3.6*er},${ey-.2} L${57+3.6*er},${ey-1.2*er} Q57,${ey-3*er-1} ${57-3.6*er},${ey-1.2*er}Z" fill="${s}"/><path d="M${43-3.6*er},${ey-.4} Q43,${ey-2.2*er} ${43+3.6*er},${ey-.4} M${57-3.6*er},${ey-.4} Q57,${ey-2.2*er} ${57+3.6*er},${ey-.4}" stroke="${sd}" stroke-width=".8" fill="none" opacity=".8"/>`:'';
+  const bags=o.bags?`<path d="M40,${ey+2.6} Q43,${ey+4.2} 46,${ey+2.6} M54,${ey+2.6} Q57,${ey+4.2} 60,${ey+2.6}" stroke="${sd}" stroke-width=".7" fill="none" opacity=".6"/>`:'';
+  const folds=o.folds?`<path d="M44.4,${ey+10} Q41.6,${ey+14} 43.4,${ey+18} M55.6,${ey+10} Q58.4,${ey+14} 56.6,${ey+18}" stroke="${sd}" stroke-width=".9" fill="none" opacity=".55" stroke-linecap="round"/>`:'';
+  const dchin=o.dchin?`<path d="M41,${chinY-.5} Q50,${chinY+5.5} 59,${chinY-.5} Q57,${chinY+3.4} 50,${chinY+4} Q43,${chinY+3.4} 41,${chinY-.5}Z" fill="${s}"/><path d="M42,${chinY+.6} Q50,${chinY+5.4} 58,${chinY+.6}" stroke="${sd}" stroke-width=".9" fill="none" opacity=".6"/>`:'';
+  const cleft=o.cleft?`<path d="M50,${chinY-3.6} L50,${chinY-1.6}" stroke="${sd}" stroke-width=".9" stroke-linecap="round" opacity=".7"/>`:'';
+  const pox=o.pox?[[40,57],[41.6,59.6],[58.6,57.4],[60,60],[39.4,60.8],[57.4,61.4],[44,55.6],[56,55]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r=".45" fill="${sd}" opacity=".35"/>`).join(''):'';
+  const blush=o.blush===false?'':`<ellipse cx="42" cy="${ey+8}" rx="3.6" ry="2.2" fill="#e08a7a" opacity="${o.blush||.22}"/><ellipse cx="58" cy="${ey+8}" rx="3.6" ry="2.2" fill="#e08a7a" opacity="${o.blush||.22}"/>`;
+  return `${o.scalp?`<ellipse cx="50" cy="38" rx="16" ry="12.5" fill="${o.scalp}"/>`:''}
+  <path d="M${o.neckW?50-o.neckW:43},66 L${o.neckW?50-o.neckW:43},80 Q50,84 ${o.neckW?50+o.neckW:57},80 L${o.neckW?50+o.neckW:57},66Z" fill="${sh}"/>
+  <ellipse cx="${50-ex+.8}" cy="${ey+3}" rx="2.6" ry="4.2" fill="${sh}"/><ellipse cx="${50+ex-.8}" cy="${ey+3}" rx="2.6" ry="4.2" fill="${sh}"/>
+  <g${T}><path d="${outline}" fill="${s}"/>
+  <path d="M58,33 C64,37 66,46 64,56 C62,64 57,70 50,71 C56,66 60,58 60,48 C60,41 59,36 58,33Z" fill="${sd}" opacity=".35"/></g>${dchin}
+  ${blush}${pox}
+  <ellipse cx="43" cy="${ey}" rx="${3.3*er}" ry="${2*er}" fill="#fff"/><ellipse cx="57" cy="${ey}" rx="${3.3*er}" ry="${2*er}" fill="#fff"/>
+  <circle cx="43.3" cy="${ey}" r="${1.6*er}" fill="${iris}"/><circle cx="57.3" cy="${ey}" r="${1.6*er}" fill="${iris}"/>
+  <circle cx="43.3" cy="${ey}" r="${.7*er}" fill="#1a1412"/><circle cx="57.3" cy="${ey}" r="${.7*er}" fill="#1a1412"/>
+  <circle cx="43.8" cy="${ey-.5}" r=".45" fill="#fff"/><circle cx="57.8" cy="${ey-.5}" r=".45" fill="#fff"/>
+  <path d="M${43-3.4*er},${ey-.6} Q43,${ey-2.9*er} ${43+3.4*er},${ey-.4}" stroke="#3b2a20" stroke-width=".9" fill="none"/><path d="M${57-3.4*er},${ey-.4} Q57,${ey-2.9*er} ${57+3.4*er},${ey-.6}" stroke="#3b2a20" stroke-width=".9" fill="none"/>
+  ${lid}${bags}
+  <path d="${browL}" stroke="${brow}" stroke-width="${bw}" fill="none" stroke-linecap="round"/><path d="${browR}" stroke="${brow}" stroke-width="${bw}" fill="none" stroke-linecap="round"/>
+  ${o.frown?`<path d="M49,${ey-6.4} L49.6,${ey-4} M51,${ey-6.4} L50.4,${ey-4}" stroke="${sd}" stroke-width=".7" opacity=".6"/>`:''}
+  ${nose}${folds}${cleft}
+  <g${my?` transform="translate(0 ${my})"`:''}>${lips}<path d="${mouth}" stroke="#8c4a3c" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+  ${o.extra||''}`}
+const body=(coat,extra='')=>`<path d="M6,100 C8,84 26,76 50,76 C74,76 92,84 94,100Z" fill="${coat}"/><path d="M6,100 C8,84 26,76 50,76 C40,80 30,88 26,100Z" fill="#000" opacity=".12"/>${extra}`;
+const cravat=(c='#f5f2ea')=>`<path d="M41,77 Q50,84 59,77 L56,92 Q50,96 44,92Z" fill="${c}"/><path d="M44,80 Q50,86 56,80" stroke="#d9d4c7" stroke-width="1" fill="none"/>`;
+const jabot=`<path d="M42,77 Q50,82 58,77 L60,86 Q55,84 54,90 Q50,87 46,90 Q45,84 40,86Z" fill="#fbf8f0"/><path d="M44,86 Q50,90 56,86 M45,90 Q50,94 55,90" stroke="#ddd6c6" stroke-width="1" fill="none"/>`;
+const curls=(pts,c,r=5.2)=>pts.map(([x,y,rr])=>`<circle cx="${x}" cy="${y}" r="${rr||r}" fill="${c}"/><circle cx="${x-1}" cy="${y-1.2}" r="${(rr||r)*.55}" fill="#fff" opacity=".18"/>`).join('');
+// rollos horizontales de peluca (siglo XVIII)
+const roll=(x,y,w,c,dark)=>`<rect x="${x-w/2}" y="${y-2.6}" width="${w}" height="5.2" rx="2.6" fill="${c}"/><path d="M${x-w/2+1.4},${y} h${w-2.8}" stroke="${dark}" stroke-width=".8" opacity=".6"/>`;
+const pearls=(x0,x1,y,sag,n,r=1.2)=>Array.from({length:n},(_,i)=>{const t=i/(n-1);const x=x0+(x1-x0)*t;const yy=y+Math.sin(t*Math.PI)*sag;return `<circle cx="${x.toFixed(1)}" cy="${yy.toFixed(1)}" r="${r}" fill="#f7f3ea"/><circle cx="${(x-.35).toFixed(1)}" cy="${(yy-.35).toFixed(1)}" r="${r*.35}" fill="#fff"/>`}).join('');
+const P={
+ beethoven:{n:'Beethoven',bg:'#3d4a36',d:
+  `<path d="M31,68 Q20,66 21,57 Q13,52 18,44 Q11,35 20,29 Q17,19 28,17 Q30,9 41,11 Q47,5 55,9 Q63,5 69,12 Q80,11 81,22 Q89,28 83,36 Q91,44 83,51 Q88,59 79,61 Q78,68 69,68 L66,50 L34,50Z" fill="#86847f"/>
+   <path d="M22,56 Q18,48 23,42 Q19,34 26,28 M27,62 Q24,54 29,48 M78,56 Q82,48 77,42 Q81,34 74,28 M73,62 Q76,54 71,48 M30,20 Q36,14 44,16 M56,13 Q64,12 70,18" stroke="#5f5d59" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+   <path d="M20,46 Q22,40 27,38 M24,34 Q28,28 34,27 M80,46 Q78,40 73,38 M76,34 Q72,28 66,27 M36,16 Q44,12 50,14 M54,12 Q60,10 66,14" stroke="#bdbbb5" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".85"/>`+
+  body('#22252c')+
+  face({scalp:'#86847f',skin:'ruddy',shape:'square',w:1.08,h:1.02,frown:true,brow:'#4a4440',browW:2.7,iris:'#3a3230',er:1.05,nose:'big',lips:'#c97a6a',mouth:'M44.8,65.4 Q47.4,64.2 50,64.6 Q52.6,64.2 55.2,65.4',my:.8,cleft:true,folds:true,bags:true,blush:.42,neckW:8,
+    extra:`<path d="M36,77 Q50,70 64,77 L66,88 Q50,94 34,88Z" fill="#c3262c"/><path d="M39,80 Q50,75 61,80 M41,84.6 Q50,80.6 59,84.6" stroke="#8f1a20" stroke-width="1.2" fill="none"/><path d="M44,78 Q50,82 56,78" stroke="#e45a5e" stroke-width="1" fill="none" opacity=".7"/>
+     <path d="M34,79 L38,63.5 L47.6,74.6 L41,79Z" fill="#f6f4ee" stroke="#cfcac0" stroke-width=".6"/><path d="M66,79 L62,63.5 L52.4,74.6 L59,79Z" fill="#f6f4ee" stroke="#cfcac0" stroke-width=".6"/>
+     <path d="M10,100 C14,88 24,80 35,79 L42,100Z M90,100 C86,88 76,80 65,79 L58,100Z" fill="#1b1d23"/>`})+
+  `<path d="M33,46 C31,36 33,28 40,24 Q50,19 60,23 C67,27 69,36 67,46 C66,40 64,36 61,34 Q56,30 52,32.4 Q49.6,29.6 46,31.4 Q41,31 38,35 C35,38 34,42 33,46Z" fill="#86847f"/>
+   <path d="M33,45 Q27,46 24.6,53 Q28.6,50.6 31,52.6 Q30,48 34,47.6Z M67,45 Q73,46 75.4,53 Q71.4,50.6 69,52.6 Q70,48 66,47.6Z" fill="#86847f"/>
+   <path d="M38,34 Q40,27 47,25 M46,31 Q48,25 55,23.6 M52,32 Q57,27 63,28 M61,34 Q65,31 66,38" stroke="#bdbbb5" stroke-width="1" fill="none" stroke-linecap="round"/>
+   <path d="M35,40 Q36,33 41,29 M65,40 Q64,33 59,29 M24,50 Q20,44 24,38 Q22,32 28,30 M76,50 Q80,44 76,38 Q78,32 72,30 M40,22 Q46,18 52,20 Q58,17 63,21" stroke="#66645f" stroke-width="1" fill="none" stroke-linecap="round"/>`},
+ mozart:{n:'Mozart',bg:'#3b342c',d:
+  `<path d="M31,40 C29,48 31,54 35,56 L37,46 L63,46 L65,56 C69,54 71,48 69,40Z" fill="#c9c5bd"/>`+
+  `<path d="M2,100 C4,80 22,71 50,71 C78,71 96,80 98,100Z" fill="#c22a22"/><path d="M2,100 C4,80 22,71 50,71 C38,76 26,86 22,100Z" fill="#000" opacity=".12"/>`+
+  `<path d="M14,100 C17,88 26,80 38,77 M86,100 C83,88 74,80 62,77" stroke="#e2b450" stroke-width="2.4" fill="none"/><path d="M17,94 C20,86 27,81 35,79 M83,94 C80,86 73,81 65,79" stroke="#e2b450" stroke-width="1" fill="none" stroke-dasharray="1.4 1.2"/>`+
+  face({scalp:'#d9d6cf',skin:'fair',shape:'oval',w:1.05,h:.98,er:1.1,iris:'#6b7f96',brow:'#8f7a62',browW:1.7,mouth:'M46,64.2 Q50,66.6 54,64.2',nose:'long',my:.6,blush:.36,neckW:7,
+    extra:`<path d="M42.6,69 Q50,72.6 57.4,69 L57.6,75.6 Q50,79 42.4,75.6Z" fill="#f7f5ef"/><path d="M43,72 Q50,75.4 57,72" stroke="#dcd8ce" stroke-width=".7" fill="none"/>
+     <path d="M36,79 Q50,85 64,79 L64,74 Q50,80 36,74Z" fill="#b8241e"/><path d="M37,76.4 Q50,82.4 63,76.4" stroke="#e2b450" stroke-width="1.6" fill="none" stroke-dasharray="1.6 1"/>
+     <path d="M51,79 Q58,77.6 61,83 Q56,82 54,85 Q52.6,82 49,83Z" fill="#f4f1e8"/><path d="M52.4,81 Q56,80.2 58.6,82.4" stroke="#d8d2c4" stroke-width=".6" fill="none"/>`})+
+  `<path d="M32,48 C29,26 40,18 50.6,18 C61,18 71,26 68,48 C66,38 61,31 51,30 C42,30.6 35,37 32,48Z" fill="#d9d6cf"/>
+   <path d="M38,27 Q48,22 60,24 M36,33 Q46,26 58,27 M40,30.6 Q50,27 62,30" stroke="#b9b5ad" stroke-width=".9" fill="none"/><path d="M42,22.4 Q50,20 58,21.6" stroke="#f1efea" stroke-width="1.2" fill="none"/>
+   <rect x="27" y="40" width="11" height="8.4" rx="4.2" fill="#d2cec6"/><rect x="62" y="40" width="11" height="8.4" rx="4.2" fill="#d2cec6"/>
+   <path d="M28.6,44.2 h7.8 M63.6,44.2 h7.8" stroke="#a9a59d" stroke-width="1"/><path d="M29,41.6 Q32.6,40.6 36,41.6 M64,41.6 Q67.6,40.6 71,41.6" stroke="#eeece6" stroke-width=".9" fill="none"/>`},
+ bach:{n:'Bach',bg:'#23384d',d:
+  curls([[26,44,7.4],[25,56,7.4],[26,68,7.4],[29,80,7],[74,44,7.4],[75,56,7.4],[74,68,7.4],[71,80,7],[31,32,7.2],[69,32,7.2]],'#e6e2d8')+
+  body('#2b2f36',cravat('#f4f1ea')+`<circle cx="62" cy="90" r="1.3" fill="#8a7a5a"/><circle cx="64" cy="96" r="1.3" fill="#8a7a5a"/>`)+
+  face({scalp:'#eeeae1',skin:'light',shape:'heavy',w:1.08,h:1.02,frown:true,lids:true,bags:true,folds:true,dchin:true,iris:'#3d3028',brow:'#4a3a2e',browW:2.6,nose:'big',mouth:'M46,65.4 Q50,64.4 54,65.4',my:.6,blush:.3,neckW:9})+
+  `<path d="M33,42 C31,23 43,16 50,16 C58,16 69,23 67,42 C63,32 58,27.5 50,27.5 C42,27.5 37,32 33,42Z" fill="#eeeae1"/>`+curls([[38,21,5.2],[46,17.6,5.4],[54,17.6,5.4],[62,21,5.2]],'#eeeae1')+curls([[32,38,4.6],[68,38,4.6]],'#e6e2d8')},
+ vivaldi:{n:'Vivaldi',bg:'#127a66',d:
+  `<path d="M29,44 C24,62 26,78 34,82 L42,80 L40,60Z M71,44 C76,62 74,78 66,82 L58,80 L60,60Z" fill="#b5432a"/>
+   <path d="M30,56 Q28,66 32,76 M70,56 Q72,66 68,76" stroke="#8e3220" stroke-width="1.2" fill="none"/>`+
+  body('#1d1d22',`<path d="M44,77 L56,77 L55,81 L45,81Z" fill="#fff"/><path d="M46.4,81 L45.8,90 L49.4,90 L49.6,81Z M50.4,81 L50.6,90 L54.2,90 L53.6,81Z" fill="#fff"/>`)+
+  face({scalp:'#c24e2f',skin:'fair',shape:'narrow',h:1.06,iris:'#5a4a30',brow:'#a2442a',browW:1.8,lips:'#cf7f73',nose:'hook',my:1.4,smile:true})+
+  `<path d="M33,48 C29,26 41,17 52,18 C63,18 71,28 67,48 C64,36 60,30 54,29 C50,32 44,33 40,31 C36,36 34,42 33,48Z" fill="#c24e2f"/><path d="M40,31 C44,27 50,24 58,23 M54,29 C58,26 62,24 64,25" stroke="#9c3b22" stroke-width="1.2" fill="none"/><path d="M33,48 Q31,56 34,62 M67,48 Q69,56 66,62" stroke="#c24e2f" stroke-width="3.4" fill="none" stroke-linecap="round"/>`},
+ scarlatti:{n:'Scarlatti',bg:'#5a3d7a',d:
+  `<path d="M31,42 C27,62 30,74 37,78 L63,78 C70,74 73,62 69,42Z" fill="#cfc9bd"/>`+
+  curls([[31,58,4.6],[32,66,4.6],[69,58,4.6],[68,66,4.6]],'#d6d0c4')+
+  body('#2c2420',jabot+`<path d="M30,84 Q34,92 33,100 M70,84 Q66,92 67,100" stroke="#b8923e" stroke-width="1.4" fill="none"/><circle cx="62" cy="92" r="4.4" fill="#e9d48a"/><path d="M62,88.6 L62,96 M59,90.6 Q62,92.6 65,90.6 M60.2,94.6 L62,96 L63.8,94.6" stroke="#c0202a" stroke-width="1.5" fill="none" stroke-linecap="round"/>`)+
+  face({scalp:'#dcd6ca',skin:'light',shape:'round',w:1.06,h:1.02,dchin:true,iris:'#3b2a20',brow:'#6d5a45',browW:1.8,lips:'#cf8679',mouth:'M45.5,64.2 Q50,66.6 54.5,64.2',nose:'long',my:.6,blush:.28,neckW:8.5})+
+  `<path d="M33,45 C32,24 44,18 50,18 C57,18 68,24 67,45 C65,34 58,27.5 50,27.5 C42,27.5 35,34 33,45Z" fill="#dcd6ca"/>`+curls([[32.6,46,4.4],[32,53,4.4],[67.4,46,4.4],[68,53,4.4]],'#d6d0c4')},
+ haydn:{n:'Haydn',bg:'#8a5a20',d:
+  
+  body('#5b3a26',cravat('#f2eee6')+`<path d="M30,84 Q36,80 42,79 M70,84 Q64,80 58,79" stroke="#3f2618" stroke-width="1.4" fill="none"/>`)+
+  face({scalp:'#d9d4ca',skin:'olive',shape:'narrow',h:1.08,iris:'#2e2218',brow:'#3a2c22',browW:2,mouth:'M46,65.4 Q50,67 54,65.4',nose:'hook',my:1.6,pox:true,folds:true,blush:.18})+
+  `<path d="M34,44 C32,26 44,20 50,20 C58,20 68,26 66,44 C63,34 58,29 50,29 C42,29 37,34 34,44Z" fill="#d9d4ca"/><path d="M40,25 Q50,21 60,25" stroke="#bdb6aa" stroke-width="1" fill="none"/>`+
+  roll(34.4,45,6.6,'#d9d4ca','#b2ab9f')+roll(65.6,45,6.6,'#d9d4ca','#b2ab9f')},
+ chopin:{n:'Chopin',bg:'#2d4f7c',d:
+  
+  body('#1b1e26',`<path d="M42,76 L46,76 L44,82Z M58,76 L54,76 L56,82Z" fill="#f4f1ea"/><path d="M42,79 L50,82 L58,79 L56,85 L50,83 L44,85Z" fill="#111318"/><path d="M47,81 h6 v3 h-6Z" fill="#111318"/>`)+
+  face({scalp:'#7a4e2c',skin:'pale',shape:'narrow',w:.94,h:1.08,iris:'#7b8a72',brow:'#6a4628',browW:1.5,lips:'#cf8a80',mouth:'M46,65.4 Q50,66 54,65.4',nose:'hook',my:1.8,blush:.14,neckW:6})+
+  `<path d="M33,52 C29,30 39,18 54,19 C66,20 72,32 67,52 C66,42 63,35 58,32 C52,32 44,30 40,26 C38,32 35,40 33,52Z" fill="#7a4e2c"/>
+   <path d="M40,26 C46,28 54,30 60,30 C64,32 66,38 67,46 M44,22 C52,22 60,24 64,30" stroke="#5e3a1e" stroke-width="1.1" fill="none"/>
+   <path d="M33,50 C32,56 33,60 36,62 C37,58 37,54 36.4,50Z M67,50 C68,56 67,60 64,62 C63,58 63,54 63.6,50Z" fill="#7a4e2c"/>`},
+ chaikovski:{n:'Chaikovski',bg:'#4a5568',d:
+  body('#2a2d33',`<path d="M42,77 L58,77 L55,83 L45,83Z" fill="#f4f1ea"/>`)+
+  face({scalp:'#dcd7cf',skin:'light',w:1.02,iris:'#4f6f96',brow:'#a9a49c',browW:2,frown:true,mouth:'M46,62.5 Q50,63.5 54,62.5',bags:true})+
+  `<path d="M35,52 C35,72 43,82 50,82 C57,82 65,72 65,52 C63,56 61,59 58,60 C54,58.4 46,58.4 42,60 C39,59 37,56 35,52Z" fill="#cfcac2"/>
+   <path d="M38,64 Q41,72 44,76 M62,64 Q59,72 56,76 M46,66 Q47,74 48,79 M54,66 Q53,74 52,79" stroke="#aaa59c" stroke-width=".9" fill="none" opacity=".8"/>
+   <path d="M41.5,61.6 Q46,57.4 50,59.4 Q54,57.4 58.5,61.6 Q54,61 50,61.2 Q46,61 41.5,61.6Z" fill="#bab4ab"/><path d="M47.4,63.4 Q50,64.6 52.6,63.4" stroke="#8c4a3c" stroke-width="1" fill="none"/>`+
+  `<path d="M34,46 C32,30 40,20 52,20 C63,21 68,30 66,46 C65,38 62,33 58,31 C54,29 46,29 42,31 C38,33 35,38 34,46Z" fill="#dcd7cf"/><path d="M40,28 C46,24 54,24 62,28 M42,31 C47,27 54,27 60,30" stroke="#c0bab1" stroke-width="1" fill="none"/>`},
+ verdi:{n:'Verdi',bg:'#1f6f43',d:
+  body('#1e2026',`<path d="M30,82 C38,76 46,78 50,84 C54,78 62,76 70,82 L66,92 C58,86 54,88 50,96 C46,88 42,86 34,92Z" fill="#f4f2ec"/><path d="M36,86 Q42,84 48,90 M64,86 Q58,84 52,90" stroke="#d8d4ca" stroke-width="1" fill="none"/>`)+
+  face({scalp:'#6a645e',skin:'olive',iris:'#2e2620',brow:'#3a342e',browW:2.2,mouth:'M46,62.5 Q50,63.5 54,62.5',frown:true,bags:true})+
+  `<path d="M35,52 C35,72 43,82 50,82 C57,82 65,72 65,52 C63,56 61,59 58,60 C54,58.4 46,58.4 42,60 C39,59 37,56 35,52Z" fill="#5c5650"/>
+   <path d="M38,64 Q41,72 44,77 M62,64 Q59,72 56,77 M47,67 Q47.6,74 48.6,80 M53,67 Q52.4,74 51.4,80" stroke="#8d8781" stroke-width="1" fill="none" opacity=".9"/>
+   <path d="M41,61.6 Q46,57 50,59.2 Q54,57 59,61.6 Q54,61 50,61.2 Q46,61 41,61.6Z" fill="#4a4540"/><path d="M47.4,63.4 Q50,64.4 52.6,63.4" stroke="#8c4a3c" stroke-width="1" fill="none"/>
+   <path d="M34,46 C33,40 34,36 36,34 L64,34 C66,36 67,40 66,46 C64,40 62,38 60,37 L40,37 C38,38 36,40 34,46Z" fill="#6a645e"/>
+   <path d="M24,37 Q50,31 76,37 Q74,41 66,39.6 Q50,37.4 34,39.6 Q26,41 24,37Z" fill="#141518"/>
+   <path d="M34,38 L36,12 Q50,9 64,12 L66,38 Q50,35 34,38Z" fill="#141518"/><path d="M35,33 Q50,30 65,33 L65.4,36.6 Q50,33.6 34.6,36.6Z" fill="#2c2e33"/><path d="M38,14 Q40,24 39,34" stroke="#3a3c42" stroke-width="1.4" fill="none"/>`},
+ clara:{n:'Clara Schumann',bg:'#7a2e5a',d:
+  `<ellipse cx="50" cy="27" rx="10" ry="6.4" fill="#2e2019"/>`+
+  body('#22222e',`<path d="M38,78 Q50,90 62,78 L60,82 Q50,92 40,82Z" fill="#f1ece0"/><path d="M41,80.4 Q50,89 59,80.4" stroke="#d6cfbf" stroke-width=".8" fill="none" stroke-dasharray="1.4 1"/><circle cx="50" cy="90" r="2.2" fill="#e6c36a"/><circle cx="50" cy="90" r="1" fill="#b23a3a"/>`)+
+  face({scalp:'#2e2019',skin:'fair',shape:'oval',h:1.04,er:1.12,iris:'#3a2a20',brow:'#2e2019',lips:'#c76f6b',browW:1.4,nose:'long',my:1,mouth:'M46,64.2 Q50,65.2 54,64.2'})+
+  `<path d="M34,52 C30,32 40,24 50,24 C60,24 70,32 66,52 C65,44 62,37 50,34.5 C38,37 35,44 34,52Z" fill="#2e2019"/><path d="M50,24 L50,34.5" stroke="#5a4232" stroke-width=".9"/>
+   <path d="M34,44 C33,50 34,55 37,57 C38.6,54 38.4,49 37,45Z M66,44 C67,50 66,55 63,57 C61.4,54 61.6,49 63,45Z" fill="#2e2019"/><path d="M35,48 Q36,52 37,55 M65,48 Q64,52 63,55" stroke="#4a362a" stroke-width=".7" fill="none"/>
+   <path d="M38,30 Q44,28 49,30 M62,30 Q56,28 51,30" stroke="#4a362a" stroke-width=".8" fill="none"/>`},
+ fanny:{n:'Fanny Mendelssohn',bg:'#b05a2a',d:
+  `<ellipse cx="50" cy="22" rx="7" ry="5" fill="#2e211a"/>`+
+  body('#3c4a6b',`<path d="M32,82 Q50,90 68,82" stroke="#f1ece2" stroke-width="3" fill="none"/>`+pearls(42,58,82,3.4,7,1))+
+  face({scalp:'#2e211a',skin:'fair',shape:'oval',er:1.12,iris:'#2e221a',brow:'#2e211a',lips:'#c9726c',browW:1.5,smile:true})+
+  `<path d="M35,48 C31,30 41,23 50,23 C59,23 69,30 65,48 C62,38 58,32 50,31.4 C42,32 38,38 35,48Z" fill="#2e211a"/><path d="M50,23 L50,31.4" stroke="#5a4232" stroke-width=".9"/>`+
+  curls([[32.6,47,3.6],[31.8,53,3.6],[32.6,59,3.4],[67.4,47,3.6],[68.2,53,3.6],[67.4,59,3.4]],'#2e211a',3.6)+
+  `<circle cx="35.6" cy="56" r="1.2" fill="#e6c36a"/><circle cx="64.4" cy="56" r="1.2" fill="#e6c36a"/>`},
+ hildegarda:{n:'Hildegarda de Bingen',bg:'#6b5a2e',d:
+  `<circle cx="50" cy="40" r="27" fill="#e9c45a"/><circle cx="50" cy="40" r="23.5" fill="none" stroke="#f6dc8a" stroke-width="1.4"/>`+
+  `<path d="M24,100 C22,60 30,24 50,22 C70,24 78,60 76,100Z" fill="#1f1f24"/>`+
+  body('#26262b')+
+  `<path d="M33,46 C33,30 42,26 50,26 C58,26 67,30 67,46 L67,74 Q50,80 33,74Z" fill="#f4f2ec"/>`+
+  face({scalp:'#f4f2ec',skin:'light',shape:'oval',iris:'#4a5a4a',brow:'#7a6a5a',lips:'#c98078',browW:1.2,lids:true,mouth:'M46,64.4 Q50,65.6 54,64.4'})+
+  `<path d="M35,40 C38,32 44,30 50,30 C56,30 62,32 65,40" stroke="#e2ded4" stroke-width="2.4" fill="none"/><path d="M35,72 Q50,80 65,72" stroke="#e2ded4" stroke-width="1.6" fill="none"/>`},
+ strozzi:{n:'Barbara Strozzi',bg:'#8c2f39',d:
+  `<path d="M30,48 C25,66 28,80 36,86 L44,74Z M70,48 C75,66 72,80 64,86 L56,74Z" fill="#8b4a26"/>`+
+  `<path d="M6,100 C8,86 26,78 50,78 C74,78 92,86 94,100Z" fill="#f2cfb2"/><path d="M14,100 C18,94 30,90 50,92 C70,90 82,94 86,100Z" fill="#f4efe4"/><path d="M10,100 Q16,96 24,97 L28,100Z M90,100 Q84,96 76,97 L72,100Z" fill="#6d2a36"/>`+
+  pearls(40,60,84,3.6,9,1.1)+
+  face({scalp:'#9a5528',skin:'fair',shape:'round',er:1.08,iris:'#3a2a1e',brow:'#7a3f20',lips:'#c9625e',browW:1.3,smile:true,blush:.3})+
+  `<path d="M34,50 C30,30 40,22 50,22 C60,22 70,30 66,50 C64,38 58,31 50,30.6 C42,31 36,38 34,50Z" fill="#9a5528"/><path d="M38,30 Q44,26 50,27 Q56,26 62,30" stroke="#7a3f1c" stroke-width="1" fill="none"/>`+
+  `<circle cx="36" cy="28" r="3" fill="#f2f0ea"/><circle cx="41" cy="24" r="2.6" fill="#e9b4c0"/><circle cx="47" cy="22" r="2.6" fill="#f2f0ea"/><circle cx="53" cy="22" r="2.6" fill="#e9b4c0"/><circle cx="59" cy="24" r="2.6" fill="#f2f0ea"/><circle cx="64" cy="28" r="3" fill="#e9b4c0"/><circle cx="35" cy="56" r="1.3" fill="#f7f3ea"/><circle cx="65" cy="56" r="1.3" fill="#f7f3ea"/>`},
+ jacquet:{n:'Élisabeth Jacquet de La Guerre',bg:'#2f6b8a',d:
+  body('#3b5a9a',`<path d="M34,82 Q50,90 66,82" stroke="#f3eee2" stroke-width="2.6" fill="none"/><path d="M26,90 Q36,84 44,86 M74,90 Q64,84 56,86" stroke="#e6c36a" stroke-width="1.6" fill="none"/>`+pearls(41,59,83,3.4,8,1.2))+
+  `<path d="M40,22 L42,6 Q50,3 58,6 L60,22Z" fill="#f6f2e8"/><path d="M43,8 L44,21 M47,6 L47.6,21 M53,6 L52.4,21 M57,8 L56,21" stroke="#d8d0be" stroke-width=".8"/>`+
+  face({scalp:'#3b2a20',skin:'fair',shape:'oval',er:1.08,iris:'#3f2f26',brow:'#3b2a20',lips:'#c76b68',browW:1.3,mouth:'M45.6,64.2 Q50,66.2 54.4,64.2'})+
+  curls([[36,32,5],[43,26.4,5],[50,24.6,5.2],[57,26.4,5],[64,32,5],[34,40,4.4],[66,40,4.4],[32.6,48,4],[67.4,48,4],[33,55,3.6],[67,55,3.6]],'#3b2a20')+
+  `<circle cx="35.6" cy="58.6" r="1.4" fill="#f7f3ea"/><circle cx="64.4" cy="58.6" r="1.4" fill="#f7f3ea"/>`},
+ martines:{n:'Marianna Martines',bg:'#4a6b3a',d:
+  body('#c8a0c8',`<path d="M34,80 Q50,90 66,80" stroke="#f7f2e6" stroke-width="3" fill="none"/><path d="M36,82 Q50,92 64,82" stroke="#fff" stroke-width="1" fill="none" stroke-dasharray="1.6 1.2"/><path d="M46,84 Q50,80 54,84 Q50,88 46,84Z" fill="#e48aa8"/>`)+
+  face({scalp:'#e5e0d7',skin:'fair',shape:'round',iris:'#3f2f26',brow:'#8a7a66',lips:'#cf7a74',browW:1.2,smile:true,blush:.32})+
+  `<path d="M35,46 C32,22 40,10 50,10 C60,10 68,22 65,46 C62,34 58,30 50,30 C42,30 38,34 35,46Z" fill="#e5e0d7"/>`+curls([[40,16,5],[50,11,5.6],[60,16,5],[35,28,4.6],[65,28,4.6],[34,38,4],[66,38,4]],'#ebe7df')+
+  `<circle cx="57" cy="12" r="3" fill="#e48aa8"/><circle cx="61" cy="15" r="2.2" fill="#f2b6c8"/><path d="M42,13 Q46,9 50,14" stroke="#7aa0c8" stroke-width="1.6" fill="none"/>`},
+ lili:{n:'Lili Boulanger',bg:'#3b4a7a',d:
+  `<ellipse cx="62" cy="40" rx="7" ry="6" fill="#241a14"/>`+
+  body('#1f2a44',`<path d="M40,77 Q50,84 60,77 L58,80 Q50,87 42,80Z" fill="#efeae0"/>`)+
+  face({scalp:'#241a14',skin:'pale',shape:'narrow',w:.96,h:1.04,er:1.22,iris:'#2e231b',brow:'#241a14',lips:'#c46a68',browW:1.4,mouth:'M46,64.6 Q50,65.4 54,64.6',my:.6,blush:.16})+
+  `<path d="M33,56 C28,34 38,22 50,22 C62,22 72,34 67,56 C66,46 64,40 60,36 C56,34 50,34 46,31 C42,33 38,36 36,40 C34,45 33,50 33,56Z" fill="#241a14"/>
+   <path d="M46,31 C42,28 40,27 37,30 M48,27 C54,24 62,26 66,32" stroke="#3a2c22" stroke-width="1" fill="none"/>`},
+ price:{n:'Florence Price',bg:'#8a3a6b',d:
+  body('#3a4a6a',pearls(40,60,81,3.6,9,1.3))+
+  face({scalp:'#1f1612',skin:'dark',shape:'round',iris:'#2b1d14',brow:'#1f1612',lips:'#7c3f3a',browW:1.4,smile:true,mouth:'M45,64 Q50,67.4 55,64',blush:.12})+
+  `<path d="M34,50 C30,30 40,22 50,22 C60,22 70,30 66,50 C64,40 60,32 50,31 C42,31 37,38 34,50Z" fill="#1f1612"/>`+
+  `<path d="M36,30 Q40,24 46,27 Q50,22 55,26 Q60,22 64,29 Q66,32 66,36 Q62,30 57,31 Q53,28 50,31 Q46,28 42,31 Q38,30 34,36 Q34,32 36,30Z" fill="#2c211b"/><path d="M38,28 Q42,26 45,29 M51,26 Q54,25 56,28 M58,27 Q62,27 63,31" stroke="#4a3a30" stroke-width=".8" fill="none"/>`+
+  `<circle cx="43" cy="49" r="4.4" fill="#fff" fill-opacity=".12" stroke="#c9b27a" stroke-width="1.1"/><circle cx="57" cy="49" r="4.4" fill="#fff" fill-opacity=".12" stroke="#c9b27a" stroke-width="1.1"/><path d="M47.4,48.6 Q50,47.4 52.6,48.6 M38.6,48.4 L35.4,47.4 M61.4,48.4 L64.6,47.4" stroke="#c9b27a" stroke-width="1" fill="none"/>`+
+  `<circle cx="35.6" cy="56" r="1.4" fill="#f7f3ea"/><circle cx="64.4" cy="56" r="1.4" fill="#f7f3ea"/>`},
+ rodrigo:{n:'María Rodrigo',bg:'#a0522d',d:
+  body('#2e2a36',`<path d="M42,77 L50,88 L58,77" stroke="#f0ebe0" stroke-width="2.2" fill="none"/><circle cx="50" cy="88" r="1.8" fill="#c9a24a"/>`)+
+  face({scalp:'#241a14',skin:'olive',shape:'round',iris:'#2f241c',brow:'#241a14',lips:'#b9645d',browW:1.5,mouth:'M46,64.4 Q50,65.8 54,64.4'})+
+  `<path d="M33,56 C29,32 38,22 50,22 C62,22 71,32 67,56 C66,48 64,42 62,38 C60,34 54,33 44,34 C40,34 37,36 36,40 C34,44 33,50 33,56Z" fill="#241a14"/>
+   <path d="M44,34 Q38,30 42,26 M46,25 Q52,28 58,26 M60,30 Q64,34 64,40 M35,44 Q37,48 35,52 M65,44 Q63,48 65,52" stroke="#3e3026" stroke-width="1.1" fill="none"/>`},
+ falla:{n:'Manuel de Falla',bg:'#3f5f8f',d:
+  `<path d="M2,100 C4,81 22,72 50,72 C78,72 96,81 98,100Z" fill="#23252b"/><path d="M2,100 C4,81 22,72 50,72 C38,77 26,86 22,100Z" fill="#000" opacity=".14"/><path d="M30,100 L40,74 L46,80Z M70,100 L60,74 L54,80Z" fill="#30333a"/>`+
+  `<ellipse cx="33.8" cy="51.6" rx="3.6" ry="6" fill="#dcae92"/><ellipse cx="66.2" cy="51.6" rx="3.6" ry="6" fill="#dcae92"/><path d="M33,48 Q31.6,51.6 33.4,55 M67,48 Q68.4,51.6 66.6,55" stroke="#b9876c" stroke-width=".9" fill="none"/>`+
+  `<ellipse cx="50" cy="36" rx="16.6" ry="17" fill="#f8e4d4"/>`+
+  face({scalp:'#f8e4d4',skin:'pale',shape:'narrow',w:.97,h:1.06,iris:'#2c2118',brow:'#6d625a',browW:1.6,frown:true,nose:'long',my:1.4,mouth:'M46.6,64.8 Q50,64 53.4,64.8',bags:true,blush:.26,neckW:6.5,
+    extra:`<path d="M38.6,56 Q40.6,62 43.6,64 M61.4,56 Q59.4,62 56.4,64" stroke="#d9b4a0" stroke-width="1.2" fill="none" opacity=".35" stroke-linecap="round"/>
+     <path d="M45.6,63.4 Q48,62 50,62.8 Q52,62 54.4,63.4 Q50,64.2 45.6,63.4Z" fill="#9a928a"/>
+     <circle cx="43" cy="49" r="4.7" fill="#fff" fill-opacity=".1" stroke="#141414" stroke-width="1.5"/><circle cx="57" cy="49" r="4.7" fill="#fff" fill-opacity=".1" stroke="#141414" stroke-width="1.5"/>
+     <path d="M47.7,48.6 Q50,47.4 52.3,48.6 M38.3,48.4 L34,47.6 M61.7,48.4 L66,47.6" stroke="#141414" stroke-width="1.2" fill="none"/><circle cx="60.6" cy="47.2" r=".6" fill="#e6c36a"/>
+     <path d="M42.6,72 Q50,76 57.4,72 L57.6,75 L50,80.4 L42.4,75Z" fill="#f4f1ea"/><path d="M38,76 L44,72.6 L50,80.4 L56,72.6 L62,76 L58,84 L42,84Z" fill="#23252b"/><path d="M42.4,75 L50,80.4 L57.6,75 L57,71.6 L50,77 L43,71.6Z" fill="#f4f1ea"/><path d="M48.6,78.6 L51.4,78.6 L52.4,86 L50,88 L47.6,86Z" fill="#3a3d46"/>`})+
+  `<path d="M38,26 Q46,20.6 56,21.6" stroke="#fff" stroke-width="2.6" opacity=".35" fill="none" stroke-linecap="round"/><path d="M60,28 Q63,31 64,35" stroke="#d4ab95" stroke-width="2" opacity=".5" fill="none" stroke-linecap="round"/>
+   <path d="M34.4,46 C34,43 34.4,40.6 35.4,39 L36.6,41 Q36.2,43.6 36.4,46Z M65.6,46 C66,43 65.6,40.6 64.6,39 L63.4,41 Q63.8,43.6 63.6,46Z" fill="#b0a9a2" opacity=".9"/>`},
+ carreno:{n:'Teresa Carreño',bg:'#2f6f6a',d:
+  `<ellipse cx="50" cy="22" rx="11" ry="7.4" fill="#1e1612"/><ellipse cx="50" cy="20.4" rx="7" ry="4" fill="#2e231c"/>`+
+  `<path d="M2,100 C4,81 22,72 50,72 C78,72 96,81 98,100Z" fill="#3a1f3a"/><path d="M2,100 C4,81 22,72 50,72 C38,77 26,86 22,100Z" fill="#000" opacity=".14"/>`+
+  face({scalp:'#1e1612',skin:'olive',shape:'oval',er:1.14,iris:'#2a1c14',brow:'#1e1612',browW:1.8,lips:'#b9625a',nose:'long',my:.8,mouth:'M46,64.2 Q50,65.6 54,64.2',blush:.2,extra:`<path d="M38,73 Q50,82 62,73 L61,78.6 Q50,87 39,78.6Z" fill="#efe8da"/><path d="M40,76 Q50,84.4 60,76" stroke="#d3c9b4" stroke-width=".8" fill="none" stroke-dasharray="1.2 1"/><circle cx="50" cy="82" r="2.4" fill="#e6c36a"/><circle cx="50" cy="82" r="1.1" fill="#2f6f6a"/>`})+
+  `<path d="M33,50 C29,30 39,22 50,22 C61,22 71,30 67,50 C66,41 62,34 50,31.6 C38,34 34,41 33,50Z" fill="#1e1612"/><path d="M50,22 L50,31.6" stroke="#4a3a30" stroke-width=".9"/>
+   <path d="M38,29 Q44,26 49,28 M62,29 Q56,26 51,28" stroke="#3e3028" stroke-width=".8" fill="none"/>
+   <circle cx="35.4" cy="56" r="1.5" fill="#e6c36a"/><path d="M35.4,57.4 L35.4,60" stroke="#e6c36a" stroke-width="1"/><circle cx="35.4" cy="60.6" r="1" fill="#c0303a"/>
+   <circle cx="64.6" cy="56" r="1.5" fill="#e6c36a"/><path d="M64.6,57.4 L64.6,60" stroke="#e6c36a" stroke-width="1"/><circle cx="64.6" cy="60.6" r="1" fill="#c0303a"/>`}
+};
+P.profe={n:'Profe',bg:'#1d5bd8',d:
+  body('#1e2125',`<path d="M40,77 L50,86 L60,77 L58,74 L50,80 L42,74Z" fill="#c9d4df"/><path d="M50,86 L50,100" stroke="#8a9099" stroke-width="1.4"/><path d="M36,78 Q33,90 34,100 M64,78 Q67,90 66,100" stroke="#2e3238" stroke-width="2" fill="none"/>`)+
+  face({skin:'olive',scalp:'#352a23',iris:'#4a3626',brow:'#2e241e',browW:2,
+    mouth:'M45.6,63.8 Q50,66.2 54.4,63.8',
+    extra:`<path d="M37,52 C37,64 43,71 50,71 C57,71 63,64 63,52 C61,62 56,67 50,67 C44,67 39,62 37,52Z" fill="#4a3a30" opacity=".13"/><path d="M45,61.8 Q50,60.8 55,61.8" stroke="#4a3a30" stroke-width="2" opacity=".1" fill="none" stroke-linecap="round"/><path d="M46.8,66.6 Q50,67.6 53.2,66.6" stroke="#b07e5b" stroke-width=".8" fill="none" opacity=".5" stroke-linecap="round"/><path d="M45.4,63 Q45.2,63.8 45.8,64.3 M54.6,63 Q54.8,63.8 54.2,64.3" stroke="#8c4a3c" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".8"/><path d="M38.6,49.4 L37.2,48.8 M38.6,50.4 L37.2,50.8 M61.4,49.4 L62.8,48.8 M61.4,50.4 L62.8,50.8" stroke="#a87358" stroke-width=".55" opacity=".5" stroke-linecap="round"/>`})+
+  `<path d="M34,47 C31,31 38,23 45,21.5 C47,19 52,18.5 55,20 C61,20 69,26 67,46 C65,38 62,33 58,31.5 C55,33.5 50,33 46,31 C42,33 38,37 36,42Z" fill="#352a23"/>
+   <path d="M40,25 Q42,20 46,21 Q48,17.5 52,19 Q56,17 58,20.5 Q63,20 63.5,24.5 Q61,23 58,24 Q55,22 52,23.5 Q48,22 45,24.5 Q42,23.5 40,25Z" fill="#3f332b"/>
+   <path d="M44,24 Q47,27 46,30 M50,22.5 Q52,26 51,30 M56,23.5 Q58,27 57,30.5" stroke="#5a4c42" stroke-width=".9" fill="none" opacity=".75"/>
+   <path d="M34.2,44 C33.8,40 34.6,37 36,35 L37.6,37.5 C36.4,40 36,42 36.2,44.5Z" fill="#8f8a84" opacity=".85"/>
+   <path d="M65.8,43 C66.2,39 65.4,36 64,34 L62.4,36.5 C63.6,39 64,41 63.8,43.5Z" fill="#8f8a84" opacity=".85"/>
+   <path d="M38,33 Q37,36 36.8,39 M62,32 Q63,35 63.2,38" stroke="#b0aaa4" stroke-width=".9" fill="none" opacity=".7"/>`};
+window.AV2=P;
+})();
+
+// ---------- avatares para la página (viewBox 0 0 40 40) e instrumento opcional ----------
+(function(){
+const INS={vln:['🎻','Violín'],pno:['🎹','Piano'],gtr:['🎸','Guitarra'],tpt:['🎺','Trompeta'],sax:['🎷','Saxofón'],drm:['🥁','Tambor'],acc:['🪗','Acordeón'],ban:['🪕','Banjo'],mic:['🎤','Micrófono']};
+window.INSTR=INS;
+const A={};Object.entries(window.AV2).forEach(([k,v])=>A[k]={n:v.n,bg:v.bg,d:`<g transform="scale(.4) translate(50 54) scale(1.32) translate(-50 -50)">${v.d}</g>`});
+const parse=key=>{const[k,i]=String(key||'').split('|');return{a:A[k]||A.scarlatti,i:INS[i]}};
+const badge=i=>i?`<circle cx="32.6" cy="32.6" r="7.6" fill="#fff" stroke="#c9cfdb" stroke-width=".8"/><text x="32.6" y="35.8" text-anchor="middle" font-size="9.4">${i[0]}</text>`:'';
+const CL='<clipPath id="avc"><circle cx="20" cy="20" r="19"/></clipPath>';
+window.AVATARS=A;
+window.avSVG=(key,size)=>{const{a,i}=parse(key);return `<svg viewBox="0 0 40 40" width="${size||32}" height="${size||32}" aria-hidden="true" style="overflow:visible">${CL}<circle cx="20" cy="20" r="19" fill="${a.bg}"/><g clip-path="url(#avc)">${a.d}</g>${badge(i)}</svg>`};
+window.avInner=key=>{const{a,i}=parse(key);return `${CL}<circle cx="20" cy="20" r="19" fill="${a.bg}"/><g clip-path="url(#avc)">${a.d}</g><circle cx="20" cy="20" r="19" fill="none" stroke="#fff" stroke-width="2"/>${badge(i)}`};
+})();
+
+</script>
+<script>
+/* ================= núcleo musical (tomado de los exámenes) ================= */
+const CLEF='M185 -173Q203 -111 203 -71Q203 -40 181 -20Q159 0 128 0Q98 0 77 -17Q55 -35 55 -60Q55 -77 67 -93Q79 -108 96 -108Q114 -108 125 -96Q136 -83 136 -67Q136 -30 94 -30Q105 -14 128 -14Q137 -14 146 -16Q156 -19 166 -25Q176 -32 182 -46Q188 -60 188 -79Q188 -91 172 -168Q159 -164 139 -164Q82 -164 41 -207Q0 -249 0 -308Q0 -329 7 -350Q14 -371 22 -388Q31 -404 47 -424Q64 -444 76 -457Q87 -469 108 -489Q94 -538 94 -578Q94 -631 114 -666Q133 -702 153 -702Q159 -702 166 -694Q173 -687 180 -673Q187 -660 192 -637Q197 -615 197 -590Q197 -496 131 -435L146 -365Q156 -367 163 -367Q199 -367 224 -338Q249 -309 249 -267Q249 -197 185 -173ZM180 -611Q180 -644 162 -644Q140 -644 126 -612Q111 -581 111 -543Q111 -518 118 -500Q141 -513 161 -548Q180 -584 180 -611ZM223 -247Q223 -279 204 -299Q185 -318 155 -318L182 -185Q223 -202 223 -247ZM169 -182 142 -317Q126 -314 113 -298Q100 -282 100 -265Q100 -256 103 -247Q107 -239 112 -233Q117 -227 122 -222Q127 -217 131 -215Q134 -213 134 -213L130 -210Q110 -216 93 -234Q75 -252 75 -280Q75 -308 93 -331Q110 -354 131 -362L121 -425Q28 -348 28 -276Q28 -233 61 -204Q93 -175 134 -175Q144 -175 169 -182Z';
+const GL={'1':['M92 51 79 56V115L66 119V61L26 77V135L13 140V82L0 86V58L13 53V-19L0 -14V-42L13 -47V-115L26 -120V-52L66 -68V-135L79 -140V-73L92 -78V-49L79 -44V28L92 22ZM66 32V-39L26 -24V48Z',.92],
+'-1':['M50 -70Q65 -70 74 -60Q82 -50 82 -32Q82 -19 73 -8Q64 4 41 27Q18 51 0 72V-172L13 -178V-58Q28 -70 50 -70ZM53 -30Q53 -49 38 -49Q31 -49 23 -45Q16 -41 13 -33V36Q31 16 42 -2Q53 -20 53 -30Z',.82],
+'0':['M78 135 65 140V55L0 81V-134L12 -140V-44L78 -70ZM65 29V-39L12 -18V50Z',.78],
+'2':['M78 -14Q73 -14 70 -10Q67 -6 67 0Q67 14 78 14H101V50H64V27Q64 17 50 17Q44 17 39 20Q35 23 35 27V50H0V14H23Q33 14 33 0Q33 -6 30 -10Q27 -14 23 -14H0V-50H35V-27Q35 -22 39 -19Q44 -16 50 -16Q64 -16 64 -27V-50H101V-14Z',1.01],
+'-2':['M53 -30Q53 -49 38 -49Q31 -49 23 -45Q16 -41 13 -33V36Q31 16 42 -2Q53 -20 53 -30ZM121 -30Q121 -49 107 -49Q100 -49 92 -45Q85 -41 82 -33V36Q100 16 110 -2Q121 -20 121 -30ZM118 -70Q134 -70 142 -60Q150 -50 150 -32Q150 -19 142 -8Q133 4 110 27Q86 51 69 72V-3Q64 3 41 27Q17 51 0 72V-172L13 -178V-58Q28 -70 50 -70Q61 -70 69 -64V-172L82 -178V-58Q96 -70 118 -70Z',1.5]};
+/* ---- datos ---- */
+const NM=['Do','Re','Mi','Fa','Sol','La','Si'],NP=[0,2,4,5,7,9,11],
+MAJ=[['Do',0,0,0],['Sol',4,7,1],['Re',1,2,2],['La',5,9,3],['Mi',2,4,4],['Si',6,11,5],['Fa♯',3,6,6],['Do♯',0,1,7],['Fa',3,5,-1],['Si♭',6,10,-2],['Mi♭',2,3,-3],['La♭',5,8,-4],['Re♭',1,1,-5],['Sol♭',4,6,-6],['Do♭',0,11,-7]],
+MIN=[['La',5,9,0],['Mi',2,4,1],['Si',6,11,2],['Fa♯',3,6,3],['Do♯',0,1,4],['Sol♯',4,8,5],['Re♯',1,3,6],['La♯',5,10,7],['Re',1,2,-1],['Sol',4,7,-2],['Do',0,0,-3],['Fa',3,5,-4],['Si♭',6,10,-5],['Mi♭',2,3,-6],['La♭',5,8,-7]],
+KEYS=MAJ.map(k=>({n:k[0],l:k[1],pc:k[2],sg:k[3],min:0})).concat(MIN.map(k=>({n:k[0],l:k[1],pc:k[2],sg:k[3],min:1}))),
+COL={b:'#1d2b30',s:'#e07b00','7':'#c0392b','9':'#7d4fa3'},AK={'1':'1','-1':'-1','0':'0','2':'2','-2':'-2'};
+const $=s=>document.querySelector(s),rnd=n=>Math.floor(Math.random()*n),shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const SYM=a=>a>0?'♯':a<0?'♭':'',kn=ki=>KEYS[ki].n+(KEYS[ki].min?' menor':' mayor');
+/* '~' = cifra tachada, '/' = niveles apilados */
+const TY=[
+{n:'Tríada de dominante',ro:'V',lb:'',d:[[5,0],[7,0],[2,0]],c:['—','6','6/4'],R:['fundamental','3.ª · sensible','5.ª'],t:'La tercera es la nota clave: la sensible sube medio tono a la fundamental de I y genera la tensión que pide el reposo.'},
+{n:'Séptima de dominante',ro:'V',lb:'7/+',d:[[5,0],[7,0],[2,0],[4,0]],c:['7/+','6/5~','+6','+4'],R:['fundamental','3.ª · sensible','5.ª','7.ª'],t:'La 7.ª choca con la sensible (5.ª disminuida). La 7.ª baja a la 3.ª de I y la sensible sube a la fundamental de I.'},
+{n:'Novena',ro:'V',lb:'9',d:[[5,0],[7,0],[2,0],[4,0],[6,0]],c:['9/7/+','7/6/5~','5/+6/4','3/+4/2'],R:['fundamental','3.ª · sensible','5.ª','7.ª','9.ª mayor'],t:'V7 con novena mayor (6.º grado). Se mantienen las resoluciones de la sensible y de la 7.ª. Solo existe en modo mayor.'},
+{n:'Novena menor',ro:'V',lb:'♭9',d:[[5,0],[7,0],[2,0],[4,0],[6,-1]],c:['♭9/7/+','♭7/6/5~','♭5/+6/4','♭3/+4/2'],R:['fundamental','3.ª · sensible','5.ª','7.ª','9.ª menor'],t:'V7 con novena menor (6.º grado rebajado): disonancia de 9.ª menor con la fundamental. La novena desciende a la 5.ª de I.'},
+{n:'Tríada de sensible',ro:'VII',lb:'5~',d:[[7,0],[2,0],[4,0]],c:['5~','6','6/4'],R:['sensible · fundamental','3.ª','5.ª disminuida'],t:'Contiene la sensible y el 4.º grado: tiene función de dominante, igual que V. Se cifra VII.'},
+{n:'Séptima de sensible',ro:'VII',lb:'7/5~',d:[[7,0],[2,0],[4,0],[6,0]],c:['7/5~','+6/5','+4/3','4/+2'],R:['sensible · fundamental','3.ª','5.ª disminuida','7.ª'],t:'Séptima de sensible (semidisminuida): es un V9 sin fundamental. Se cifra VII. Solo existe en modo mayor.'},
+{n:'Séptima disminuida',ro:'VII',lb:'7~',d:[[7,0],[2,0],[4,0],[6,-1]],c:['7~','+6/5~','+4/3','+2'],R:['sensible · fundamental','3.ª','5.ª disminuida','7.ª disminuida'],t:'Es un V♭9 sin fundamental. Todas sus terceras son menores y resuelve igual que los demás acordes de dominante.'}
+];
+const fig=s=>`<span class="fg">${s.split('/').map(x=>`<b>${x.endsWith('~')?`<i class="sl">${x.slice(0,-1)}</i>`:x}</b>`).join('')}</span>`,
+rlab=i=>TY[i].ro+(TY[i].lb?fig(TY[i].lb):''),avail=(ki,t)=>!(KEYS[ki].min&&(t==2||t==5));
+function deg(k,d,alt){const L=(k.l+d-1)%7,t=(k.pc+NP[d-1])%12;let x=(t-NP[L]+12)%12;if(x>6)x-=12;return{L,a:x+alt}}
+function sigOf(ki){const c=KEYS[ki].sg,o=c>0?[3,0,4,1,5,2,6]:[6,2,5,1,4,0,3],s={};for(let L=0;L<7;L++)s[L]=0;for(let i=0;i<Math.abs(c);i++)s[o[i]]=c>0?1:-1;return s}
+/* los acordes se construyen sobre la escala mayor homónima: en menor la sensible queda alterada */
+function chord(ki,ti,inv=0){const k=KEYS[ki],ns=TY[ti].d.map((x,j)=>{const n=deg(k,x[0],x[1]);n.j=j;n.d=x[0];n.role=x[0]==7?'s':j==3?'7':j==4?'9':'b';return n});
+let s=28+ns[0].L;if(s>33)s-=7;ns.forEach((n,i)=>n.s=s+2*i);for(let j=0;j<inv;j++)ns[j].s+=7;ns.sort((a,b)=>a.s-b.s);
+ns.forEach(n=>n.m=12*(Math.floor(n.s/7)+1)+NP[n.L]+n.a);return ns}
+/* ---- dibujo ---- */
+const Y=s=>150-(s-30)*6,SP=12;
+const AF={'1':.86,'-1':.88,'0':.86,'2':.9,'-2':.88};
+const GLH={'1':2.8,'-1':2.5,'0':2.8,'2':1,'-2':2.5};
+function glyph(a,x,y){const d=GL[AK[a]][0];return `<path d="${d}" fill="#1d2b30" transform="translate(${x},${y}) scale(${.12*AF[AK[a]]})"/>`}
+function acc(a,right,y,paren,f){const k=AK[a],W=GL[k][1]*SP*AF[k]*f,pw=paren?6*f:0,gl=right-W-pw;let g=`<path d="${GL[k][0]}" fill="#1d2b30" transform="translate(${gl},${y}) scale(${.12*AF[k]*f})"/>`;
+if(paren){const hh=GLH[k]*SP*AF[k]*f/2+2;g+=`<path d="M${right-3*f} ${y-hh}Q${right+3*f} ${y} ${right-3*f} ${y+hh}M${gl-3*f} ${y-hh}Q${gl-9*f} ${y} ${gl-3*f} ${y+hh}" fill="none" stroke="#1d2b30" stroke-width="${1.5+.6*f}" stroke-linecap="round"/>`}return g}
+/* reparto de alteraciones: columna junta a la nota; los avisos (entre paréntesis) se apilan y se achican si se pisan */
+function layoutAcc(ns,sig){const list=[];ns.forEach(n=>{n.st=null;const a=sig[n.L];if(n.a===a){if(a)n.st={p:1}}else n.st={p:0};if(n.st)list.push(n)});
+list.sort((a,b)=>b.s-a.s);const cols=[],dim=(n,f)=>{const k=AK[n.a];return{h:GLH[k]*SP*AF[k]*f,w:GL[k][1]*SP*AF[k]*f+(n.st.p?12*f:0)}};
+list.forEach(n=>{const sc=n.st.p?[.8,.68,.56]:[1];let ok=0;
+for(let c=0;c<4&&!ok;c++)for(const f of sc){const d=dim(n,f),pv=cols[c]&&cols[c].last;if(!pv||(pv.s-n.s)*6>=(pv.h+d.h)/2+1.5){n.st.c=c;n.st.f=f;cols[c]={last:{s:n.s,h:d.h},w:Math.max(cols[c]?cols[c].w:0,d.w)};ok=1;break}}
+if(!ok){const f=sc[sc.length-1],d=dim(n,f);n.st.c=3;n.st.f=f;cols[3]={last:{s:n.s,h:d.h},w:Math.max(cols[3]?cols[3].w:0,d.w)}}});
+let r=14;cols.forEach(c=>{if(c){c.r=r;r+=c.w+3}});list.forEach(n=>n.st.r=cols[n.st.c].r);return list.length?r:0}
+function head(x,y,col,k){k=k||1;const R=-32*Math.PI/180,c=Math.cos(R),s=Math.sin(R),ix=4.9*k,iy=2.5*k,rx=9.8*k,ry=6.4*k;
+return `<path fill-rule="evenodd" fill="${col}" d="M${x-rx} ${y}a${rx} ${ry} 0 1 0 ${2*rx} 0a${rx} ${ry} 0 1 0 ${-2*rx} 0zM${(x-ix*c).toFixed(2)} ${(y-ix*s).toFixed(2)}a${ix} ${iy} -32 1 0 ${(2*ix*c).toFixed(2)} ${(2*ix*s).toFixed(2)}a${ix} ${iy} -32 1 0 ${(-2*ix*c).toFixed(2)} ${(-2*ix*s).toFixed(2)}z"/>`}
+function base(ki,w){const c=KEYS[ki].sg,pos=c>0?[38,35,39,36,33,37,34]:[34,37,33,36,32,35,31];let g='';
+for(let i=0;i<5;i++)g+=`<line x1="6" x2="${w-6}" y1="${Y(30+2*i)}" y2="${Y(30+2*i)}" stroke="#2a3a40" stroke-width="1.6"/>`;
+g+=`<path d="${CLEF}" fill="#1d2b30" transform="translate(10,${Y(32)+2.632*SP}) scale(.12)"/>`;
+for(let i=0;i<Math.abs(c);i++)g+=glyph(c>0?1:-1,52+i*13,Y(pos[i]));return g}
+/* ns ascendentes; colf(n)->color; atf(n)->atributos del grupo (para arrastrar); nl: sin líneas adicionales; lim: dibujar solo las primeras lim notas */
+function notes(ns,x,sig,colf,atf,nl,lim){layoutAcc(ns,sig);let g='';
+ns.forEach((n,i)=>{n.dx=i&&n.s-ns[i-1].s==1&&!ns[i-1].dx?1:0;if(lim!==undefined&&i>=lim)return;const nx=x+(n.dx?19:0),y=Y(n.s);let h='';
+if(!nl){for(let e=28;e>=n.s;e-=2)h+=`<line x1="${nx-15}" x2="${nx+15}" y1="${Y(e)}" y2="${Y(e)}" stroke="#2a3a40" stroke-width="1.6"/>`;for(let e=40;e<=n.s;e+=2)h+=`<line x1="${nx-15}" x2="${nx+15}" y1="${Y(e)}" y2="${Y(e)}" stroke="#2a3a40" stroke-width="1.6"/>`}
+if(n.st)h+=acc(n.a,x-n.st.r,y,n.st.p,n.st.f);h+=head(nx,y,colf(n));
+g+=atf?`<g ${atf(n)}>${h}<circle cx="${nx}" cy="${y}" r="15" fill="transparent"/></g>`:h});return g}
+function ext(ns,sig){const t=layoutAcc(ns,sig);let r=11;ns.forEach((n,i)=>{if(i&&n.s-ns[i-1].s==1&&!ns[i-1].dx)r=30});return [t?-t:-11,r]}
+const left0=ki=>52+Math.abs(KEYS[ki].sg)*13+16,cMid=(ki,W)=>Math.max(W/2,left0(ki)+60);
+function cxOf(ns,ki,W){const [l,r]=ext(ns,sigOf(ki));return Math.max(cMid(ki,W)-(l+r)/2,left0(ki)-l)}
+function chordLabel(ki,t,inv,x,na){const T=TY[t],c=T.c[inv],ps=c&&c!=='—'?c.split('/'):[],wr=T.ro=='V'?16:35,fw=ps.length?Math.max(...ps.map(s=>s.replace('~','').length))*9:0,tot=wr+(fw?3+fw:0),x0=x-tot/2,a=amer(ki,t,inv);
+let g=`<text x="${x0}" y="214" font-size="23" font-family="Georgia,serif" fill="#1d2b30">${T.ro}</text>`;
+ps.forEach((p,i)=>{const cr=p.endsWith('~'),s=cr?p.slice(0,-1):p,xc=x0+wr+3+fw/2,yy=209+(i-(ps.length-1)/2)*15+5;g+=`<text x="${xc}" y="${yy}" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2b30">${s}</text>`;if(cr)g+=`<line x1="${xc-3}" y1="${yy+1}" x2="${xc+4}" y2="${yy-10}" stroke="#1d2b30" stroke-width="1.7" stroke-linecap="round"/>`});
+if(ST.am&&!na)g+=`<text x="${x}" y="240" text-anchor="middle" font-size="14" font-weight="700" font-family="Georgia,serif" fill="#6b2fa0">${a}</text>`;
+return `<g>${na?'':`<title>Cifrado americano: ${a}</title>`}<rect x="${x-62}" y="72" width="124" height="${ST.am&&!na?172:156}" fill="transparent"/>${g}</g>`}
+const lbH=lb=>ST.am&&!(lb&&lb[2])?200:190;
+function staff(ns,ki,col,lb){const x=cxOf(ns,ki,340);return `<svg viewBox="0 46 340 ${lb?lbH(lb):160}" role="img" aria-label="Acorde en el pentagrama">${base(ki,340)}${notes(ns,x,sigOf(ki),n=>col?COL[n.role]:COL.b)}${lb?chordLabel(ki,lb[0],lb[1],x,lb[2]):''}</svg>`}
+/* resolución a I con las notas más cercanas: sensible sube, séptima baja a la 3.ª, novena baja a la 5.ª */
+function mkPool(ki,ti,lv){const k=KEYS[ki],r=TY[ti].d[0][0],ex=chord(ki,ti),s0=ex[0].s,req=new Set(ex.map(n=>n.L+','+n.a)),p=[];
+for(let j=0;j<5;j++){const d=(r-1+2*j)%7+1,D=deg(k,d,0),s=s0+2*j;p.push({L:D.L,a:D.a,s});
+const vm=D.a-1,v=D.a>-1?D.a-1:D.a+1;
+if(req.has(D.L+','+vm))p.push({L:D.L,a:vm,s});else if(lv==2||(lv==1&&(d==7||d==6))||(k.min&&d==7))p.push({L:D.L,a:v,s})}
+return p.map((n,i)=>({...n,id:i,m:12*(Math.floor(n.s/7)+1)+NP[n.L]+n.a}))}
+
+const RN=['','I','II','III','IV','V','VI'],IN=['estado fundamental','1.ª inversión','2.ª inversión','3.ª inversión'],
+BJ=['la fundamental','la 3.ª (sensible)','la 5.ª','la 7.ª'],sy=a=>a>0?'♯'.repeat(a):a<0?'♭'.repeat(-a):'',nn=n=>NM[n.L]+sy(n.a),NL=['C','D','E','F','G','A','B'],an=n=>NL[n.L]+sy(n.a),
+AQ=['','7','9','7♭9','dim','m7♭5','dim7'],
+DG=[[5,7,2],[5,7,2,4],[5,7,2,4,6],[5,7,2,4,6],[7,2,4],[7,2,4,6],[7,2,4,6]],
+IVL=[[[0,0],[2,4],[4,7]],[[0,0],[2,4],[4,7],[6,10]],[[0,0],[2,4],[4,7],[6,10],[8,14]],[[0,0],[2,4],[4,7],[6,10],[8,13]],[[0,0],[2,3],[4,6]],[[0,0],[2,3],[4,6],[6,10]],[[0,0],[2,3],[4,6],[6,9]]],
+TXT=['La sensible (3.ª) sube medio tono a la fundamental del acorde de destino.','La 7.ª baja a la 3.ª del destino y la sensible sube a su fundamental.','V7 con novena mayor: la novena baja a la 5.ª del destino.','V7 con novena menor: la novena baja a la 5.ª del destino.','Contiene la sensible, el 2.º y el 4.º grados: también tiene función de dominante.','Es un V9 sin fundamental.','Es un V♭9 sin fundamental.'],
+dl=(d,i,t=1)=>TY[t].ro+(i?fig(TY[t].c[i]):TY[t].lb?fig(TY[t].lb):'')+' del '+RN[d];
+function mk(L0,pc0,t,inv){let s0=28+L0;if(s0>33)s0-=7;const ns=IVL[t].map(([o,st],j)=>{const L=(L0+o)%7,pc=(pc0+st)%12;let a=(pc-NP[L]+12)%12;if(a>6)a-=12;const d=DG[t][j];return{L,a,s:s0+o,j,d,role:d==7?'s':j==3?'7':j==4?'9':'b'}});
+for(let j=0;j<inv;j++)ns[j].s+=7;ns.sort((a,b)=>a.s-b.s);ns.forEach(n=>n.m=12*(Math.floor(n.s/7)+1)+NP[n.L]+n.a);return ns}
+function tgt(k,d){const K=KEYS[k];return{T:deg(K,d,0),pc:(K.pc+NP[d-1])%12,mi:[2,3,6].includes(d)}}
+const sd=(k,d,t,i)=>{const g=tgt(k,d);return t<4?mk((g.T.L+4)%7,(g.pc+7)%12,t,i):mk((g.T.L+6)%7,(g.pc+11)%12,t,i)},
+am=(ns,t,i)=>an(ns.find(n=>n.j==0))+AQ[t]+(i?'/'+an(ns[0]):''),tn=(k,d)=>{const g=tgt(k,d);return an(g.T)+(g.mi?'m':'')};
+function nt(L,pc){L%=7;let a=((pc%12)-NP[L]+12)%12;if(a>6)a-=12;return{L,a}}
+function resT(ns,k,d){const g=tgt(k,d),T=g.T,tn={1:{L:T.L,a:T.a},3:nt(T.L+2,g.pc+(g.mi?3:4)),5:nt(T.L+4,g.pc+7)},mv={7:[1,1],4:[3,-1],6:[5,-1],5:[5,0]},has3=ns.some(n=>n.d==4),u=[];
+ns.forEach(n=>{let q,ds;if(n.d==2){q=has3?1:3;ds=has3?-1:1}else[q,ds]=mv[n.d];const b=tn[q],s=n.s+ds;let z=u.find(z=>z.s==s);
+if(!z){z={L:b.L,a:b.a,s,m:12*(Math.floor(s/7)+1)+NP[b.L]+b.a,role:'b',srcs:[]};u.push(z)}z.srcs.push(n)});return u.sort((a,b)=>a.s-b.s)}
+const asg=(k,L)=>{const sg=KEYS[k].sg;return sg>0?([3,0,4,1,5,2,6].slice(0,sg).includes(L)?1:0):sg<0?([6,2,5,1,4,0,3].slice(0,-sg).includes(L)?-1:0):0};
+function pool2(k,d,t,lv,inv){const ex=sd(k,d,t,0),s0=ex[0].s,p=[],add=(L,a,s)=>{if(Math.abs(a)<=2&&!p.some(x=>x.s==s&&x.a==a))p.push({L,a,s})};
+for(let j=0;j<5;j++){const o=j<inv?7:0,s=s0+2*j+o,L=s%7,e=ex[j];
+if(e){add(L,e.a,s);if(o)add(L,e.a,s-7);const ds=asg(k,L);if(ds!=e.a)add(L,ds,s);if(lv>=2||(lv==1&&e.role!='b'))add(L,e.a>-1?e.a-1:e.a+1,s)}
+else{add(L,asg(k,L),s);if(lv>=2)add(L,asg(k,L)+1,s)}}
+return p.map((n,i)=>({...n,id:i,m:12*(Math.floor(n.s/7)+1)+NP[n.L]+n.a}))}
+
+const QZ=[
+[0,'¿Qué es una dominante secundaria?',['Un acorde de dominante que resuelve en un grado distinto de la tónica','Un acorde de dominante que resuelve siempre en I','Un acorde de subdominante alterado'],'Es el V7 de un grado de la escala que no es la tónica.'],
+[0,'¿En qué grados puede resolver una dominante secundaria?',['II, III, IV, V y VI','Solo en el V','Solo en I'],'Cualquier grado menos la tónica.'],
+[0,'¿Qué función tiene una dominante secundaria?',['Crea una tensión temporal y tonicaliza el grado de destino','Cierra la obra en la tónica','Modula definitivamente a otra tonalidad'],'El acorde de destino suena como un pequeño centro de reposo.'],
+[0,'En Do mayor, ¿cuál es la V7 del II?',['A7','G7','D7'],'A7 resuelve en Dm.'],
+[0,'En Do mayor, ¿cuál es la V7 del V?',['D7','A7','G7'],'D7 resuelve en G.'],
+[1,'En Do mayor, ¿qué acorde es C7?',[dl(4,0),dl(5,0),dl(2,0)],'C7 resuelve en F (IV).'],
+[1,'En Do mayor, ¿cuál es la V7 del VI?',['E7','B7','A7'],'E7 resuelve en Am.'],
+[1,'En Do mayor, ¿qué acorde es B7?',[dl(3,0),dl(6,0),dl(5,0)],'B7 resuelve en Em (III).'],
+[1,'¿Cómo se lee «V/II»?',['«V del II» (dominante del segundo grado)','«Quinto del II»','«V más II»'],'Se indica «V del II», no «quinto del II».'],
+[1,'¿Cómo se cifra la 1.ª inversión de la dominante del II con séptima?',[dl(2,1),dl(2,2),dl(2,0)],'Con la sensible en el bajo se cifra la inversión: 6/5 con la 5 tachada.'],
+[2,'¿Qué cifras lleva la 2.ª inversión de la dominante con séptima?',[fig('+6'),fig('6/5~'),fig('+4')],'La 5.ª en el bajo se cifra +6.'],
+[2,'¿Qué cifras indican la 7.ª en el bajo?',[fig('+4'),fig('+6'),fig('6/5~')],'3.ª inversión: +4.'],
+[2,'En Fa mayor, ¿cuál es la sensible de la V7 del III?',['Sol♯','Sol','La♭'],'III es La: la V7 del III es Mi7 (Mi–Sol♯–Si–Re) y Sol♯ es la sensible de La.'],
+[2,'En la resolución de una dominante secundaria, ¿qué hace la 7.ª?',['Baja a la 3.ª del acorde de destino','Sube a la fundamental del destino','Se queda quieta'],'La sensible sube y la 7.ª baja, siempre a la nota más cercana.']];
+
+
+const TH=[
+['¿Cuál es la nota más importante del acorde de dominante?',['La tercera (la sensible)','La fundamental','La quinta'],'La sensible es la tercera del V y su atracción por medio tono hacia la tónica genera la tensión.'],
+['¿Cómo resuelve la sensible?',['Asciende medio tono a la fundamental de I','Desciende un tono','Se mantiene como nota común'],'Es el movimiento de atracción que define la función de dominante.'],
+['¿Cómo resuelve la séptima del acorde de dominante?',['Desciende a la 3.ª del acorde de tónica','Asciende a la fundamental de I','Se mantiene en el mismo sonido'],'La 7.ª baja un grado, hasta la 3.ª del acorde de tónica.'],
+['¿Sobre qué grado se construye el acorde de dominante?',['Sobre el 5.º grado','Sobre el 4.º grado','Sobre el 1.er grado'],'Se construye igual en todas las tonalidades, con la sensible como tercera.'],
+['La función de dominante se opone a la de tónica. ¿Qué representa cada una?',['Dominante: tensión · Tónica: reposo','Dominante: reposo · Tónica: tensión','Las dos son reposo'],'La dominante genera inestabilidad y la tónica la resuelve.'],
+['En V7, ¿qué disonancia es la más característica?',['5.ª disminuida entre sensible y 7.ª','4.ª justa entre fundamental y 7.ª','3.ª mayor entre fundamental y 5.ª'],'Sensible y 7.ª forman una 5.ª disminuida (tritono).'],
+['En modo mayor, ¿qué ocurre con el acorde de VII grado?',['Tiene la misma función que V, pero se cifra VII','Tiene función de tónica','Es un acorde de subdominante'],'Contiene la sensible, así que ejerce función de dominante.'],
+['La séptima de sensible equivale a…',['un V9 sin fundamental','un V♭9 sin fundamental','un V7 con la 5.ª aumentada'],'La séptima disminuida es la que equivale a V♭9 sin fundamental.'],
+['En modo menor, ¿qué hay que hacer con la 7.ª nota de la escala para formar la dominante?',['Subirla medio tono (alterar la sensible)','Dejarla como está en la armadura','Bajarla medio tono'],'Sin sensible no hay función de dominante: la alteración se escribe en la partitura.'],
+['La dominante de una tonalidad menor coincide con…',['la dominante del modo mayor homónimo','la subdominante del mayor','la dominante del relativo mayor'],'Al alterar la sensible, el V (y el VII) son iguales que en el mayor del mismo nombre.'],
+['¿Cómo resuelve la novena menor del acorde de dominante?',['Desciende a la 5.ª del acorde de I','Asciende a la 3.ª de I','Se queda quieta'],'La novena baja un grado hasta la quinta de la tónica.'],
+['¿Qué notas de la escala forman la séptima disminuida de sensible?',['7.ª, 2.ª, 4.ª y 6.ª rebajada','7.ª, 2.ª, 4.ª y 6.ª','5.ª, 7.ª, 2.ª y 4.ª'],'Es la séptima de sensible con el 6.º grado rebajado.'],
+['En modo menor, ¿qué acordes de la gama de dominante desaparecen?',['La novena mayor y la séptima de sensible','La séptima de dominante y la novena menor','Ninguno'],'Ambos necesitan el 6.º grado mayor, que en menor está rebajado.'],
+['¿Qué acorde de dominante aparece en modo menor con el 6.º grado ya rebajado?',['La novena menor (V♭9)','La novena mayor (V9)','La séptima de sensible'],'En menor el 6.º grado es naturalmente menor, así que encaja la novena menor.'],
+['La tríada de sensible equivale a…',['un V7 sin fundamental','un V9 sin fundamental','un V con la 5.ª aumentada'],'Quitando la fundamental al V7 quedan la sensible, el 2.º y el 4.º grados: la tríada de sensible.'],
+['¿Qué intervalo hay entre la fundamental del V y la sensible?',['Una 3.ª mayor','Una 3.ª menor','Una 5.ª justa'],'La sensible es la tercera del V, y es mayor: por eso los acordes de sensible son un V sin fundamental.'],
+['¿Qué acordes de la gama de dominante contienen la sensible?',['Todos ellos (V, VII y sus ampliaciones)','Solo V y V7','Solo los que tienen séptima'],'La sensible está presente en toda la gama; ella es la que da la función de dominante.']];
+
+const PSMP='data:audio/mpeg;base64,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';
+const VSMP='';
+/* ================= concurso ================= */
+const ST={am:0};
+const esc=s=>String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const shf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+function toast(t){const d=document.createElement('div');d.textContent=t;const b=$('#toasts');b.appendChild(d);setTimeout(()=>d.remove(),3200);while(b.children.length>3)b.firstChild.remove()}
+function stf(ns,ki,col,W){W=W||340;const x=cxOf(ns,ki,W);return `<svg viewBox="0 46 ${W} 160" role="img" aria-label="Acorde en el pentagrama">${base(ki,W)}${notes(ns,x,sigOf(ki),n=>col?COL[n.role]:COL.b)}</svg>`}
+const emptyStaff=ki=>`<svg viewBox="0 46 340 160" role="img" aria-label="Pentagrama con la armadura">${base(ki,340)}</svg>`;
+
+/* ---------- preguntas (sin acordes de novena) ---------- */
+const TA=[0,1,4,5,6];   /* V, V7, VII, VII7 (semidisminuida), VII7 disminuida */
+const OKK=KEYS.map((k,i)=>i).filter(i=>Math.abs(KEYS[i].sg)<=4);
+const THF=TH.filter((_,i)=>![7,10,12,13].includes(i));   /* fuera las de teoría que tratan la novena */
+const SHAPES=['▲','◆','●','■','★','⬟'];
+const BANKN={A:'Acorde de dominante',B:'Dominantes secundarias'};
+const QT={c1:60,c2:120,i1:25,i2:25,f2:25,n2:20,t:20,z:20};
+const qSrc=q=>(q.ty=='c1'||q.ty=='i1'||q.ty=='t')?'A':'B';
+const isBuild=q=>q.ty=='c1'||q.ty=='c2';
+function pickA(used){for(let n=0;n<300;n++){const ki=OKK[rnd(OKK.length)],ts=TA.filter(t=>avail(ki,t)),ti=ts[rnd(ts.length)],key=ki+','+ti;if(!used.has(key)){used.add(key);return[ki,ti]}}const ki=OKK[rnd(OKK.length)];return[ki,1]}
+function pkB(t,used){const f=()=>{const c=[];for(let k=0;k<15;k++)if(Math.abs(KEYS[k].sg)<=4)for(let d=2;d<=6;d++){if(used.has(k+'-'+d))continue;const ns=sd(k,d,t,0);if(ns.concat(resT(ns,k,d)).every(n=>Math.abs(n.a)<=2))c.push([k,d])}return c};
+  let c=f();if(!c.length){used.clear();c=f()}const x=c[rnd(c.length)];used.add(x[0]+'-'+x[1]);return x}
+function genQuiz(bank,N){
+  const PA=['c1','c1','c1','c1','i1','i1','i1','t','t','t'],PB=['c2','c2','c2','c2','i2','i2','n2','n2','f2','f2','z'];
+  const pat=bank=='A'?PA:bank=='B'?PB:PA.concat(PB);let bag=[];while(bag.length<N*3)bag=bag.concat(shf(pat));
+  const uA=new Set(),uB=new Set(),th=shf(THF),qz=shf(QZ);let ti=0,zi=0;const out=[];
+  for(const ty of bag){if(out.length>=N)break;let q=null;
+    if(out.length&&out[out.length-1].ty==ty&&ty!='c1'&&ty!='c2')continue;   /* evita dos seguidas del mismo tipo */
+    if(ty=='t'){if(ti<th.length){const x=th[ti++],o=shf(x[1].map((t,j)=>[t,j==0]));q={ty,q:x[0],o:o.map(v=>v[0]),c:o.findIndex(v=>v[1]),exp:x[2]}}}
+    else if(ty=='z'){if(zi<qz.length){const x=qz[zi++],o=shf(x[2].map((t,j)=>[t,j==0]));q={ty,q:x[1],o:o.map(v=>v[0]),c:o.findIndex(v=>v[1]),exp:x[3]}}}
+    else if(ty=='c1'){const[ki,t]=pickA(uA),P=mkPool(ki,t,1+rnd(2));q={ty,ki,ti:t,P,ord:shf(P.map((_,i)=>i))}}
+    else if(ty=='i1'){const[ki,t]=pickA(uA);q={ty,ki,ti:t,opts:TA.filter(x=>avail(ki,x))}}
+    else if(ty=='c2'){const t=[1,1,0,6][rnd(4)],inv=t==6?0:rnd(TY[t].c.length),[k,d]=pkB(t,uB),P=pool2(k,d,t,2,inv);q={ty,ki:k,d,t,inv,P,ord:shf(P.map((_,i)=>i))}}
+    else if(ty=='i2'){const t=[1,0,4,1,6][rnd(5)],inv=t<2?rnd(TY[t].c.length):0,[k,d]=pkB(t,uB);q={ty,ki:k,d,t,inv}}
+    else if(ty=='n2'){const[k,d]=pkB(1,uB),j=rnd(4),ns=sd(k,d,1,0),c=ns.find(n=>n.j==j),cn=nn(c),o=new Set([cn]);[sy(c.a+1),sy(c.a-1)].forEach(a=>o.add(NM[c.L]+a));let g=0;while(o.size<4&&g++<60)o.add(NM[rnd(7)]+sy(rnd(3)-1));
+      const opts=shf([cn,...[...o].filter(x=>x!=cn).slice(0,3)]);q={ty,ki:k,d,j,opts,c:opts.indexOf(cn)}}
+    else if(ty=='f2'){const t=rnd(2),inv=rnd(TY[t].c.length),[k,d]=pkB(t,uB);q={ty,ki:k,d,t,inv,n:TY[t].c.length}}
+    if(q)out.push(q)}
+  return out}
+function qPrompt(q){switch(q.ty){
+  case 'c1':return `Construye ${rlab(q.ti)} <span class="sub">(${TY[q.ti].n})</span> en <b>${kn(q.ki)}</b>`;
+  case 'i1':return `¿Qué acorde es este en <b>${kn(q.ki)}</b>?`;
+  case 'c2':return `Construye ${dl(q.d,q.inv,q.t)} <span class="sub">(${TY[q.t].n}${q.inv?', '+IN[q.inv]:''})</span> en <b>${kn(q.ki)}</b>`;
+  case 'i2':return `Este acorde de dominante, en <b>${kn(q.ki)}</b>, ¿de qué grado es dominante?`;
+  case 'n2':return `En <b>${kn(q.ki)}</b>, ¿cuál es <b>${BJ[q.j]}</b> de la <b>${dl(q.d,0)}</b>?`;
+  case 'f2':return `Este acorde es dominante del <b>${RN[q.d]}</b> en <b>${kn(q.ki)}</b>. ¿Qué cifrado tiene?`;
+  default:return q.q}}
+function qNotes(q){if(q.ty=='c1'||q.ty=='i1')return chord(q.ki,q.ti);if(q.ty=='c2'||q.ty=='i2'||q.ty=='f2')return sd(q.ki,q.d,q.t,q.inv);return null}
+const hasVis=q=>q.ty=='i1'||q.ty=='i2'||q.ty=='f2';
+function qOpts(q){switch(q.ty){
+  case 'i1':return q.opts.map(t=>rlab(t)+`<small>${TY[t].n}</small>`);
+  case 'i2':return [2,3,4,5,6].map(x=>`${RN[x]}<small>${nn(tgt(q.ki,x).T)}</small>`);
+  case 'f2':return [...Array(q.n).keys()].map(i=>dl(q.d,i,q.t));
+  case 'n2':return q.opts.map(x=>`<span style="font-size:1.3em">${x}</span>`);
+  case 't':case 'z':return q.o.map(x=>x.startsWith('<span class="fg"')?`<span class="bigfig">${x}</span>`:x);default:return null}}
+function qCorrect(q){switch(q.ty){case 'i1':return q.opts.indexOf(q.ti);case 'i2':return q.d-2;case 'f2':return q.inv;default:return q.c}}
+function qExp(q){switch(q.ty){
+  case 'c1':return `${rlab(q.ti)} en ${kn(q.ki)}. ${TY[q.ti].t}`;
+  case 'i1':return `Era ${rlab(q.ti)} (${TY[q.ti].n}). ${TY[q.ti].t}`;
+  case 'c2':case 'i2':case 'f2':return `${dl(q.d,q.inv,q.t)} en ${kn(q.ki)}: <b>${am(sd(q.ki,q.d,q.t,q.inv),q.t,q.inv)}</b>, que resuelve en ${tn(q.ki,q.d)}. ${TXT[q.t]}`;
+  case 'n2':{const ns=sd(q.ki,q.d,1,0).slice().sort((a,b)=>a.j-b.j);return `La ${dl(q.d,0)} en ${kn(q.ki)} es ${ns.map(nn).join(' – ')} (${am(ns,1,0)}).`}
+  default:return q.exp||''}}
+function check(q,a){if(isBuild(q)){if(!Array.isArray(a)||!a.length)return 0;const key=n=>n.L+','+n.a+','+n.s;const g=a.map(i=>q.P[i]).filter(Boolean).map(key).sort().join('|');return g==qNotes(q).map(key).sort().join('|')?1:0}
+  return +a===qCorrect(q)?1:0}
+
+/* ---------- sonido de piano (muestra del examen de dominantes secundarias) ---------- */
+let AC=null;const SMP={buf:null,st:0};
+function ctx(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(AC.state!=='running')try{const p=AC.resume();p&&p.catch&&p.catch(()=>{})}catch(e){}return AC}
+let OUTG=null;function OUT(){if(OUTG&&OUTG.c===AC)return OUTG.g;const g=AC.createGain();g.gain.value=1.6;try{const c=AC.createDynamicsCompressor();c.threshold.value=-14;c.ratio.value=6;g.connect(c);c.connect(AC.destination)}catch(e){g.connect(AC.destination)}OUTG={c:AC,g};return g}
+function loadP(){if(SMP.st||!ctx())return;SMP.st=1;try{const s=atob(PSMP.split(',')[1]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);AC.decodeAudioData(u.buffer,x=>{SMP.buf=x},()=>{SMP.st=0})}catch(e){SMP.st=0}}
+function tone(m,t,d,v){const g=AC.createGain();g.connect(OUT());
+  if(SMP.buf){const s=AC.createBufferSource(),dt=(m-72)*100+3,e=Math.min(d,SMP.buf.duration/Math.pow(2,dt/1200));s.buffer=SMP.buf;s.detune.value=dt;v*=.85;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.004);g.gain.setValueAtTime(v,t+Math.max(.05,e-.3));g.gain.linearRampToValueAtTime(0,t+e);s.connect(g);s.start(t);s.stop(t+e+.05);return}
+  const o=AC.createOscillator();o.type='triangle';o.frequency.value=440*Math.pow(2,(m-69)/12);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*.5,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);o.start(t);o.stop(t+d)}
+function wk(f){const a=ctx();if(!a)return;loadP();if(a.state==='running'){f();return}let d=0;const go=()=>{if(!d){d=1;try{f()}catch(e){}}};try{const p=a.resume();p&&p.then?p.then(go,go):go()}catch(e){go()}setTimeout(go,400)}
+function playChord(ns){if(!ns||!ns.length)return;wk(()=>{const t=AC.currentTime+.05;ns.forEach(n=>tone(n.m,t,2.4,.75/Math.sqrt(ns.length)))})}
+function playNote(n){wk(()=>tone(n.m,AC.currentTime+.02,1.4,.55))}
+['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,()=>{ctx();loadP()},{passive:true,capture:true}));
+
+/* ---------- fichas de compositores/as (como en la K9) ---------- */
+const INFO={
+ beethoven:['1770–1827 · Alemania','Siguió componiendo cuando ya estaba completamente sordo. Estrenó su Novena Sinfonía sin poder oír los aplausos.'],
+ clara:['1819–1896 · Alemania','Fue una de las pianistas más famosas de su tiempo y dio conciertos durante más de sesenta años.'],
+ mozart:['1756–1791 · Austria','Compuso sus primeras piezas con cinco años y llegó a escribir más de seiscientas obras.'],
+ fanny:['1805–1847 · Alemania','Escribió más de 450 obras. Algunas de sus canciones se publicaron con el nombre de su hermano Felix.'],
+ bach:['1685–1750 · Alemania','Nació el mismo año que Scarlatti. Tuvo veinte hijos y varios fueron también compositores.'],
+ hildegarda:['1098–1179 · Alemania','Abadesa en la Edad Media. Además de música, escribió libros sobre medicina y plantas.'],
+ vivaldi:['1678–1741 · Italia','Le llamaban «el cura rojo» por su pelo. Enseñó música en un orfanato de niñas de Venecia.'],
+ strozzi:['1619–1677 · Italia','Publicó ocho libros de música, algo muy poco habitual para una mujer del siglo XVII.'],
+ scarlatti:['1685–1757 · Italia y España','Compuso 555 sonatas para clave, muchas en Madrid para la reina María Bárbara.'],
+ jacquet:['1665–1729 · Francia','Tocaba el clave para Luis XIV desde niña y fue la primera mujer en Francia en componer una ópera.'],
+ haydn:['1732–1809 · Austria','Le llaman «el padre de la sinfonía»: compuso 104.'],
+ martines:['1744–1812 · Austria','De joven recibió clases de Haydn, que vivía en su misma casa, y Mozart tocaba dúos con ella.'],
+ chopin:['1810–1849 · Polonia','Casi toda su música es para piano. Publicó su primera obra con siete años.'],
+ lili:['1893–1918 · Francia','Fue la primera mujer en ganar el Premio de Roma de composición, con solo diecinueve años.'],
+ verdi:['1813–1901 · Italia','Compuso óperas como Aida y La traviata. Su coro «Va, pensiero» se convirtió en un himno en Italia.'],
+ price:['1887–1953 · Estados Unidos','Fue la primera mujer afroamericana cuya sinfonía interpretó una gran orquesta de su país.'],
+ chaikovski:['1840–1893 · Rusia','Compuso los ballets El lago de los cisnes y El cascanueces.'],
+ rodrigo:['1888–1967 · España','Fue la primera compositora que estrenó una ópera en el Teatro Real de Madrid.'],
+ falla:['1876–1946 · España','Compuso El amor brujo, con la famosa «Danza ritual del fuego», y el ballet El sombrero de tres picos.'],
+ carreno:['1853–1917 · Venezuela','Con solo diez años tocó el piano en la Casa Blanca para el presidente Abraham Lincoln.']};
+const ORDER=['beethoven','clara','mozart','fanny','bach','hildegarda','vivaldi','strozzi','scarlatti','jacquet','haydn','martines','chopin','lili','verdi','price','chaikovski','rodrigo','falla','carreno'].filter(k=>AVATARS[k]);
+const avN=k=>(AVATARS[k]||{}).n||k;
+
+/* ---------- puntos, rachas, pistas y equipos ---------- */
+const HINT=300;   /* lo que resta una pista si se acierta */
+const streakBonus=s=>s>=3?Math.min(600,(s-1)*100):0;   /* 3 seguidas: +200, 4: +300 … hasta +600 */
+const TEAMS=[['Rojo','#d9443c'],['Azul','#2c6ed4'],['Ámbar','#d4920a'],['Verde','#22935a'],['Morado','#8a52c6'],['Turquesa','#11808a']];
+const tN=i=>'Equipo '+TEAMS[i][0];
+function buildHint(q){const ns=qNotes(q),root=ns.find(n=>n.j==0)||ns[0],bass=ns[0];return `La fundamental es <b>${nn(root)}</b> y el acorde tiene <b>${ns.length} notas</b>${bass!==root?`. En el bajo va <b>${nn(bass)}</b>`:''}.`}
+function hintHide(q){const n=qOpts(q).length,c=qCorrect(q),w=shf([...Array(n).keys()].filter(i=>i!==c));return w.slice(0,n<=3?1:2)}
+
+/* ---------- conexión: servidor MQTT público por WebSocket seguro (igual que la K9) ---------- */
+const BROKERS=[{url:'wss://public.cloud.shiftr.io',username:'public',password:'public'},{url:'wss://broker.hivemq.com:8884/mqtt'},{url:'wss://broker.emqx.io:8084/mqtt'}];
+const NS='mgp-concurso-dominantes/';
+const T=code=>({host:NS+code+'/pantalla',stu:NS+code+'/moviles'});
+function connect(idx,id,onOk,onFail,status,only){
+  if(typeof mqtt==='undefined'){onFail('No se ha podido cargar la conexión. Comprueba internet y recarga la página.');return}
+  if(idx>=BROKERS.length||(only&&idx>only.max)){onFail('No se ha podido conectar con el servidor de la sala. Puede que la red del centro lo bloquee: prueba con los datos del móvil o con otra wifi.');return}
+  status&&status('Conectando con el servidor '+(idx+1)+'…');
+  let done=false;const B=BROKERS[idx];const cli=mqtt.connect(B.url,{clientId:id+'-'+idx+'-'+Math.random().toString(36).slice(2,6),clean:true,connectTimeout:6000,reconnectPeriod:2000,keepalive:30,username:B.username,password:B.password});
+  const to=setTimeout(()=>{if(!done){done=true;try{cli.end(true)}catch(e){}connect(idx+1,id,onOk,onFail,status,only)}},7000);
+  cli.on('connect',()=>{if(done)return;done=true;clearTimeout(to);onOk(cli,idx)});
+  cli.on('error',()=>{})}
+function qrSVG(text){if(typeof qrcode==='undefined')return '<p style="color:#15282e;margin:8px">No se ha podido cargar el generador del código QR. Usad la dirección y el código de sala.</p>';
+  const q=qrcode(0,'M');q.addData(text);q.make();const n=q.getModuleCount();let d='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+2} ${r+2}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${n+4} ${n+4}" shape-rendering="crispEdges" role="img" aria-label="Código QR para entrar en la sala"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`}
+const baseURL=()=>location.href.split('#')[0];
+
+/* ---------- inicio ---------- */
+
+/* ---------- si se recarga la pantalla del profe (F5), la sala se recupera tal como estaba ---------- */
+const HK=NS+'sala-profe';
+function hSave(){if(!H.code||H.ph=='conn'||H.ph=='fail')return;try{localStorage.setItem(HK,JSON.stringify({at:Date.now(),code:H.code,ph:H.ph,P:[...H.P],qs:H.qs,qi:H.qi,qid:H.qid,qStart:H.qStart||0,tl:H.tl||0,cfg:H.cfg,rej:H.rej,dist:H.dist||[],prevRank:H.prevRank||{},live:H.live,ended:H.ended||0,key:H.key||''}))}catch(e){}}
+function hLoadSaved(){try{const s=JSON.parse(localStorage.getItem(HK)||'null');if(s&&s.code&&Date.now()-s.at<6*3600e3)return s}catch(e){}return null}
+function hForget(){try{localStorage.removeItem(HK)}catch(e){}}
+setInterval(()=>{if(H.cli)hSave()},15000);
+const phTxt={lobby:'esperando para empezar',q:'en mitad de una pregunta',reveal:'corrigiendo',rank:'en la clasificación',end:'terminada'};
+function resumeCard(){const s=hLoadSaved();if(!s)return '';return `<div class="card resume"><div><p class="eyebrow">Sala abierta</p><h2>Sala ${esc(s.code)} · ${s.P.length} ${s.P.length==1?'alumno':'alumnos'}</h2><p class="muted" style="margin:4px 0 0">${s.qs&&s.qs.length&&s.ph!='lobby'?'Ejercicio '+(s.qi+1)+' de '+s.qs.length+', ':''}${phTxt[s.ph]||''}. Los móviles siguen conectados a ella.</p></div><div class="row"><button class="btn primary big" onclick="hostResume()">Volver a la sala ${esc(s.code)}</button><button class="btn ghost" onclick="hForget();vHome()">Descartarla</button></div></div>`}
+function hostResume(){const s=hLoadSaved();if(!s){hostOpen();return}
+  Object.assign(H,{code:s.code,ph:'conn',P:new Map(s.P),qs:s.qs||[],qi:s.qi,qid:s.qid,qStart:s.qStart,tl:s.tl,cfg:Object.assign(H.cfg,s.cfg||{}),rej:s.rej||{},dist:s.dist||[],prevRank:s.prevRank||{},ended:s.ended||0,key:s.key||''});if(s.live!=null)H.live=s.live;
+  H.msg='Volviendo a la sala '+s.code+'…';hRender();const i=+s.code[0]-1;
+  connect(i,myHostId,cli=>{H.cli=cli;cli.subscribe(T(H.code).stu);cli.on('message',hMsg);cli.on('connect',()=>{try{cli.subscribe(T(H.code).stu)}catch(e){}hPubNow()});
+    H.ph=s.ph;clearInterval(H.tick);H.tick=setInterval(hTick,250);hRender();hPubNow();toast('Sala '+H.code+' recuperada')},
+    err=>{H.msg=err;H.ph='fail';hRender()},m=>{H.msg=m;if(H.ph=='conn')hRender()},{max:i})}
+function vHome(){$('#app').innerHTML=`<div class="home">
+  <div><p class="eyebrow">Análisis musical · concurso en clase</p><h1>Concurso de armonía</h1></div>
+  <p class="lead">Las preguntas salen de los exámenes del acorde de dominante y de las dominantes secundarias, sin los acordes de novena. La pantalla de clase hace la pregunta y cada alumno o alumna responde desde su móvil, solo o por equipos.</p>
+  ${resumeCard()}
+  <div class="roles">
+    <div class="card role"><h2>🖥️ Pantalla de clase</h2><p>Para el ordenador del proyector. Abre la sala, muestra el QR y dirige el concurso.</p><button class="btn primary big" onclick="hostOpen()">Abrir sala</button></div>
+    <div class="card role"><h2>📱 Soy alumno/a</h2><p>Si has escaneado el QR ya estás aquí. Elige compositor, escribe tu nombre y entra.</p><button class="btn big" onclick="studentStart('')">Entrar con el móvil</button></div>
+  </div><div class="row"><button class="btn ghost" onclick="remoteForm()">🔑 Mando del profe</button><span class="muted" style="font-size:.9rem">Para ver en tu móvil la respuesta correcta y controlar la sala.</span></div></div>`}
+
+/* ================= PANTALLA DE CLASE ================= */
+const H={cli:null,code:'',ph:'conn',P:new Map(),qs:[],qi:-1,qid:'',qStart:0,tl:0,cfg:{bank:'AB',n:15,mult:1,teams:0},rej:{},tick:null,pubT:null,lastPub:0,dist:[],prevRank:{},msg:''};
+const myHostId='h'+Math.random().toString(36).slice(2,9);
+function hostOpen(){H.ph='conn';H.msg='Conectando…';hRender();
+  connect(0,myHostId,(cli,idx)=>{H.cli=cli;H.code=String(idx+1)+String(100+rnd(900));cli.subscribe(T(H.code).stu);cli.on('message',hMsg);
+    cli.on('connect',()=>{try{cli.subscribe(T(H.code).stu)}catch(e){}hPubNow()});
+    H.ph='lobby';hPubNow();hRender();clearInterval(H.tick);H.tick=setInterval(hTick,250)},
+    err=>{H.msg=err;H.ph='fail';hRender()},s=>{H.msg=s;if(H.ph=='conn')hRender()})}
+function rankMap(){const arr=[...H.P].sort((a,b)=>b[1].score-a[1].score);const r={};let last=null,pos=0;arr.forEach(([id,p],i)=>{if(p.score!==last){pos=i+1;last=p.score}r[id]=pos});return r}
+function teamSizes(excl){const c=Array(H.cfg.teams).fill(0);H.P.forEach((p,id)=>{if(id!==excl&&p.team!=null&&p.team<H.cfg.teams)c[p.team]++});return c}
+function smallestTeam(excl){const c=teamSizes(excl);return c.indexOf(Math.min(...c))}
+function fixTeams(){if(!H.cfg.teams)return;H.P.forEach((p,id)=>{if(p.team==null||p.team>=H.cfg.teams)p.team=smallestTeam(id)})}
+/* puntos del equipo = media de los puntos de sus miembros (así es justo aunque los equipos sean de distinto tamaño) */
+function teamStats(){if(!H.cfg.teams)return [];const t=TEAMS.slice(0,H.cfg.teams).map((x,i)=>({i,c:x[1],m:[],sum:0,gain:0}));
+  H.P.forEach(p=>{const X=t[p.team];if(!X)return;X.m.push(p);X.sum+=p.score;X.gain+=(p.last?p.last.pts:0)});
+  t.forEach(X=>{X.avg=X.m.length?Math.round(X.sum/X.m.length):0;X.g=X.m.length?Math.round(X.gain/X.m.length):0});
+  const act=t.filter(X=>X.m.length).sort((a,b)=>b.avg-a.avg);let last=null,pos=0;act.forEach((X,i)=>{if(X.avg!==last){pos=i+1;last=X.avg}X.pos=pos});return act}
+function hPub(){clearTimeout(H.pubT);H.pubT=setTimeout(hPubNow,90)}
+function hPubNow(){hSave();if(!H.cli||!H.cli.connected)return;H.lastPub=Date.now();const live=['q','reveal','rank'].includes(H.ph),ranks=rankMap(),shown=['reveal','rank'].includes(H.ph);
+  const m={t:'st',ph:H.ph,qi:H.qi,n:H.qs.length,qid:H.qid,q:live?H.qs[H.qi]:null,left:H.ph=='q'?Math.max(0,H.tl-(Date.now()-H.qStart)):0,tl:H.tl,cfg:{teams:H.cfg.teams},
+    pl:[...H.P].map(([id,p])=>[id,p.name,p.av,p.score,p.team]),done:H.ph=='q'?[...H.P].filter(([id,p])=>p.ans[H.qid]).map(([id])=>id):[],
+    res:['reveal','rank','end'].includes(H.ph)?Object.fromEntries([...H.P].map(([id,p])=>{const l=shown&&p.last?p.last:{};return [id,[l.ok?1:0,l.pts||0,p.score,ranks[id],p.streak,l.answered?1:0,l.hint?1:0,l.bonus||0]]})):null,
+    tm:H.cfg.teams?teamStats().map(X=>[X.i,X.avg,X.pos]):null,rej:H.rej,at:Date.now()};
+  try{H.cli.publish(T(H.code).host,JSON.stringify(m),{qos:0,retain:true})}catch(e){}}
+function hMsg(topic,buf){let m;try{m=JSON.parse(buf.toString())}catch(e){return}if(!m||!m.from)return;const id=String(m.from).slice(0,24);
+  if(m.t=='ctl'){if(m.key&&m.key===H.key)hCtl(String(m.cmd));return}
+  if(m.t=='hi'){const name=String(m.name||'').trim().slice(0,20)||'Alumno/a',av=AVATARS[m.av]?m.av:ORDER[0];
+    const others=[...H.P].filter(([i])=>i!==id);const holder=others.find(([i,p])=>p.av===av);const freeExists=ORDER.some(k=>!others.some(([i,p])=>p.av===k));
+    if(holder&&freeExists){H.rej[id]=av;hPub();return}
+    delete H.rej[id];let p=H.P.get(id);
+    if(p){p.name=name;p.av=av}else{p={name,av,score:0,streak:0,ans:{},last:null,team:null};H.P.set(id,p);toast(`${name} entra como ${avN(av)}`)}
+    const wt=Number.isInteger(m.team)?m.team:null;
+    if(H.cfg.teams){if(wt!=null&&wt>=0&&wt<H.cfg.teams)p.team=wt;else if(p.team==null||p.team>=H.cfg.teams)p.team=smallestTeam(id)}else if(wt!=null)p.team=wt;
+    hPub();hPlayers();return}
+  if(m.t=='ans'){const p=H.P.get(id);if(!p||H.ph!=='q'||m.qid!==H.qid||p.ans[H.qid])return;p.ans[H.qid]={a:m.a,t:Date.now()-H.qStart,h:m.h?1:0};hPub();hAnswered();
+    if([...H.P.values()].every(x=>x.ans[H.qid]))setTimeout(()=>{if(H.ph=='q')closeQ()},800)}}
+function setCfg(k,v){H.cfg[k]=v;if(k=='teams')fixTeams();hRender();hPub()}
+function moveP(id){const p=H.P.get(id);if(!p||!H.cfg.teams)return;p.team=((p.team==null?-1:p.team)+1)%H.cfg.teams;hPlayers();hPub()}
+function startQuiz(){if(!H.P.size){H.msg='Todavía no hay nadie conectado. Espera a que entren los móviles.';const e=$('#lmsg');if(e)e.textContent=H.msg;return}
+  fixTeams();H.qs=genQuiz(H.cfg.bank,H.cfg.n);H.P.forEach(p=>{p.score=0;p.streak=0;p.ans={};p.last=null;p.hist=[]});H.qi=-1;H.ended=0;nextQ()}
+function nextQ(){H.qi++;if(H.qi>=H.qs.length){finish();return}const q=H.qs[H.qi];H.ph='q';H.qid='q'+H.qi+'-'+Date.now().toString(36);H.qStart=Date.now();H.tl=Math.round(QT[q.ty]*H.cfg.mult)*1000;H.P.forEach(p=>p.last=null);hRender();hPubNow()}
+function hTick(){if(H.ph!=='q')return;const left=Math.max(0,H.tl-(Date.now()-H.qStart)),s=Math.ceil(left/1000);
+  const r=$('#ring');if(r){r.querySelector('b').textContent=s>=100?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):s;const c=r.querySelector('.rg');if(c)c.style.strokeDashoffset=String(302*(1-left/H.tl));r.classList.toggle('low',s<=5)}
+  MUS.urgent=left<=5500;MUS.prog=1-left/H.tl;
+  if(left<=0){closeQ();return}if(Date.now()-H.lastPub>4000)hPubNow()}
+function closeQ(){if(H.ph!=='q')return;const q=H.qs[H.qi];H.prevRank=rankMap();H.dist=[];
+  H.P.forEach(p=>{const a=p.ans[H.qid];const ok=a?check(q,a.a):0;let pts=0,bonus=0;
+    if(ok){p.streak++;let base=Math.round(1000*(1-.5*Math.min(1,a.t/H.tl)));if(a.h)base=Math.max(100,base-HINT);bonus=streakBonus(p.streak);pts=base+bonus}else p.streak=0;
+    p.score+=pts;p.last={ok,pts,bonus,answered:!!a,hint:a&&a.h};(p.hist=p.hist||[])[H.qi]={ok,pts,answered:!!a,hint:!!(a&&a.h)};if(a&&!isBuild(q))H.dist[+a.a]=(H.dist[+a.a]||0)+1});
+  H.ph='reveal';hRender();hPubNow();if(!isBuild(q)&&hasVis(q))setTimeout(()=>playChord(qNotes(q)),900)}
+function showRank(){H.ph='rank';hRender();hPubNow()}
+function finish(){H.ph='end';hRender();hPubNow()}
+function backLobby(){H.ph='lobby';H.qs=[];H.qi=-1;H.qid='';H.ended=0;H.P.forEach(p=>{p.score=0;p.streak=0;p.ans={};p.last=null;p.hist=[]});hRender();hPubNow()}
+function closeRoom(){hForget();musStop();MUS.ph=null;clearInterval(H.tick);try{H.cli.publish(T(H.code).host,'',{retain:true});setTimeout(()=>{try{H.cli.end(true)}catch(e){}},400)}catch(e){}H.cli=null;H.P.clear();H.ph='conn';location.hash='';vHome()}
+function hearQ(){const q=H.qs[H.qi];if(q)playChord(qNotes(q))}
+const joinURL=()=>baseURL()+'#c'+H.code;
+const chip=(id,p,mv)=>`<span class="pchip"${mv?` role="button" tabindex="0" title="Cambiar de equipo" onclick="moveP('${id}')"`:''}>${avSVG(p.av,40)}<span>${esc(p.name)}<br><small>${esc(avN(p.av))}</small></span></span>`;
+function playersHTML(){if(!H.P.size)return '<span class="empty">Esperando a que entren los móviles…</span>';
+  if(!H.cfg.teams)return [...H.P].map(([id,p])=>chip(id,p,0)).join('');
+  return `<div class="teams">${TEAMS.slice(0,H.cfg.teams).map((t,i)=>{const ms=[...H.P].filter(([id,p])=>p.team===i);return `<div class="team" style="--tc:${t[1]}"><h3>${tN(i)} <small>${ms.length}</small></h3>${ms.map(([id,p])=>chip(id,p,1)).join('')||'<span class="empty">Nadie todavía</span>'}</div>`}).join('')}</div><small class="muted">Toca a una persona para pasarla al equipo siguiente.</small>`}
+function hPlayers(){const e=$('#players');if(e){e.innerHTML=playersHTML();const c=$('#pcount');if(c)c.textContent=H.P.size+(H.P.size==1?' persona conectada':' personas conectadas')}else hAnswered();const rc=$('#rcount');if(rc)rc.textContent=H.P.size}
+function hAnswered(){const e=$('#answered');if(!e)return;const done=[...H.P.values()].filter(p=>p.ans[H.qid]);e.innerHTML=`<b>${done.length}</b><span>de ${H.P.size} han respondido</span><span class="avrow">${done.map(p=>avSVG(p.av,30)).join('')}</span>`}
+function qbar(q){return `<div class="qbar"><span class="pill">Pregunta ${H.qi+1} / ${H.qs.length}</span><span class="pill soft">${BANKN[qSrc(q)]}</span>${H.cfg.teams?`<span class="pill soft">Por equipos</span>`:''}<span class="grow"></span><span class="room">Sala <b>${H.code}</b> · <span id="rcount">${H.P.size}</span> 📱</span></div>`}
+function tilesHTML(q,reveal){const o=qOpts(q),c=qCorrect(q);return `<div class="tiles">${o.map((x,i)=>`<div class="tile t${i%6} ${reveal?(i==c?'right':'dim'):''}"><i class="shp" aria-hidden="true">${SHAPES[i%6]}</i><span>${x}</span>${reveal?`<em>${H.dist[i]||0}</em>`:''}</div>`).join('')}</div>`}
+const tmAvs=(X,sz)=>`<span class="avstack">${X.m.map(p=>avSVG(p.av,sz)).join('')}</span>`;
+const fmtT=s=>s>=60?`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`:s;
+function hRender(){const A=$('#app');document.body.classList.add('host');setTimeout(showNow,0);
+  if(H.ph=='conn'||H.ph=='fail'){A.innerHTML=`<div class="home"><h1>Abriendo la sala…</h1><p class="lead">${esc(H.msg)}</p>${H.ph=='fail'?'<div class="row"><button class="btn primary" onclick="hostOpen()">Intentarlo otra vez</button><button class="btn ghost" onclick="vHome()">Volver</button></div>':''}</div>`;return}
+  musPhase(H.ph);
+  const fs=`<div class="tools">${endBtn()}${xlsBtn()}${remoteBtn()}<button class="btn ghost" id="musb" onclick="togMus()">${MUS.on?'🎵 Música: sí':'🔇 Música: no'}</button>${H.ph!="lobby"?`<button class="btn ghost" onclick="showQR()">📱 QR para entrar</button>`:""}<button class="btn ghost" onclick="togFS()">⛶ Pantalla completa</button></div>`;
+  if(H.ph=='lobby'){const url=joinURL(),seg=(k,list)=>`<div class="seg">${list.map(([v,t])=>`<button class="segb ${H.cfg[k]==v?'on':''}" onclick="setCfg('${k}',${typeof v=='string'?`'${v}'`:v})">${t}</button>`).join('')}</div>`;
+    A.innerHTML=fs+`<div class="lobby">
+    <section class="card join"><p class="eyebrow">Entrad con el móvil</p><div class="qr">${qrSVG(url)}</div><p class="url">${esc(url.replace(/^https?:\/\//,''))}</p>
+      <div class="bigcode">${H.code}</div><p class="muted" style="margin:0">Código de la sala</p>
+      ${location.protocol=='file:'?'<p class="warn">Has abierto la página desde un archivo de tu ordenador: los móviles no podrán abrir esta dirección. Publícala en internet (por ejemplo, en GitHub Pages) y abre la sala desde allí.</p>':''}</section>
+    <section class="setup"><h1 class="title">Concurso de armonía<small>Escanead el QR, elegid compositor/a y escribid vuestro nombre.</small></h1>
+      <div class="opt"><span class="lbl">Preguntas del examen</span>${seg('bank',[['A','Acorde de dominante'],['B','Dominantes secundarias'],['AB','Los dos']])}<small>Construir acordes, identificarlos, notas, cifrados y teoría. Sin acordes de novena.</small></div>
+      <div class="opt"><span class="lbl">Modo de juego</span>${seg('teams',[[0,'Individual'],[2,'2 equipos'],[3,'3 equipos'],[4,'4 equipos'],[5,'5 equipos'],[6,'6 equipos']])}${H.cfg.teams?'<small>Cada equipo suma la media de los puntos de sus miembros. En el móvil se elige equipo al entrar.</small>':''}</div>
+      <div class="opt"><span class="lbl">Número de preguntas</span>${seg('n',[[10,'10'],[15,'15'],[20,'20'],[25,'25']])}</div>
+      <div class="opt"><span class="lbl">Tiempo para responder</span>${seg('mult',[[1,'Normal'],[1.5,'Más tiempo'],[2,'El doble']])}<small>Normal: ${QT.t} s teoría y notas · ${QT.i1} s identificar y cifrar · ${QT.c1} s construir V y VII · ${fmtT(QT.c2)} min construir dominantes secundarias.</small></div>
+      <p class="rules">🔥 Desde 3 aciertos seguidos hay bonus, y crece con la racha (+200, +300… hasta +600). 💡 Quien pida pista gana ${HINT} puntos menos si acierta.</p>
+      <p class="rules">🎵 Música (adaptaciones): Mozart, Beethoven, Bach, Pachelbel, Vivaldi, Haydn, Satie, Grieg, Bizet y Rimski-Kórsakov. Cada pregunta suena con una obra distinta. <span id="nowp"></span></p>
+      <div class="opt"><span class="lbl" id="pcount">${H.P.size} ${H.P.size==1?'persona conectada':'personas conectadas'}</span><div id="players" class="players">${playersHTML()}</div></div>
+      <p class="msg" id="lmsg"></p>
+      <div class="row"><button class="btn primary big" onclick="startQuiz()">Empezar el concurso ▶</button><button class="btn ghost" onclick="closeRoom()">Cerrar la sala</button></div>
+    </section></div>`;return}
+  const q=H.qs[H.qi];
+  if(H.ph=='q'){const vis=hasVis(q)?stf(qNotes(q),q.ki):isBuild(q)?emptyStaff(q.ki):'',secs=Math.ceil(H.tl/1000);
+    A.innerHTML=fs+qbar(q)+`<div class="qhead"><h1 class="prompt">${qPrompt(q)}</h1><div class="ring" id="ring"><svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--stage3)" stroke-width="10"/><circle class="rg" cx="55" cy="55" r="48" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="0" style="transition:stroke-dashoffset .25s linear"/></svg><b>${secs>=100?fmtT(secs):secs}</b></div></div>
+    ${vis?`<div class="paper qvis">${vis}</div>`:''}
+    ${isBuild(q)?'<p class="buildnote">📱 Construid el acorde en el móvil y pulsad «Enviar»</p>':tilesHTML(q,false)}
+    <div class="qfoot"><div class="answered" id="answered"></div><span class="grow"></span>${hasVis(q)?'<button class="btn" onclick="hearQ()">🔊 Escuchar el acorde</button>':''}<button class="btn" onclick="closeQ()">Cerrar la pregunta</button></div><p class="muted" id="nowp" style="margin:10px 0 0;font-size:.9rem"></p>`;
+    hAnswered();return}
+  if(H.ph=='reveal'){const right=[...H.P.values()].filter(p=>p.last&&p.last.ok),hints=[...H.P.values()].filter(p=>p.last&&p.last.hint).length;let body;
+    if(isBuild(q))body=`<div class="sol"><div class="paper">${stf(qNotes(q),q.ki,1)}</div><div class="solstat"><b>${right.length}</b> de ${H.P.size} lo han construido bien<div class="avrow" style="margin-top:8px">${right.map(p=>avSVG(p.av,34)).join('')}</div></div></div>`;
+    else body=(hasVis(q)?`<div class="paper qvis">${stf(qNotes(q),q.ki,1)}</div>`:'')+tilesHTML(q,true);
+    A.innerHTML=fs+qbar(q)+`<h1 class="prompt" style="margin-bottom:16px">${qPrompt(q)}</h1>${body}<p class="exp">${qExp(q)}</p>
+    <div class="qfoot"><span class="answered"><b>${right.length}</b><span>${right.length==1?'acierto':'aciertos'}${hints?` · 💡 ${hints} ${hints==1?'ha pedido pista':'han pedido pista'}`:''}</span></span><span class="grow"></span>${(hasVis(q)||isBuild(q))?'<button class="btn" onclick="hearQ()">🔊 Escuchar</button>':''}<button class="btn primary big" onclick="showRank()">Clasificación ▶</button></div>`;return}
+  if(H.ph=='rank'){const now=rankMap(),last=H.qi+1>=H.qs.length,nextB=`<div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary big" onclick="${last?'finish()':'nextQ()'}">${last?'Ver el podio 🏆':'Siguiente pregunta ▶'}</button></div>`;
+    if(H.cfg.teams){const ts=teamStats(),best=[...H.P.values()].sort((a,b)=>b.score-a.score).slice(0,3);
+      A.innerHTML=fs+qbar(q)+`<div class="rank"><h1>Clasificación por equipos</h1>${ts.map((X,i)=>`<div class="rrow trow ${X.pos==1?'top1':''}" style="--tc:${X.c};animation-delay:${i*.06}s"><span class="pos">${X.pos}</span>${tmAvs(X,38)}<span class="nm">${tN(X.i)}<small>${X.m.map(p=>esc(p.name)).join(', ')}</small></span><span class="dl">${X.g?'+'+X.g:''}</span><span class="sc">${X.avg}</span></div>`).join('')}
+        <p class="muted" style="text-align:center;margin:6px 0 0">Mejores puntuaciones individuales: ${best.map(p=>`<b>${esc(p.name)}</b> ${p.score}${p.streak>=3?' 🔥'+p.streak:''}`).join(' · ')}</p>${nextB}<p class="muted" id="nowp" style="text-align:center"></p></div>`;return}
+    const arr=[...H.P].sort((a,b)=>b[1].score-a[1].score).slice(0,10);
+    A.innerHTML=fs+qbar(q)+`<div class="rank"><h1>Clasificación</h1>${arr.length?arr.map(([id,p],i)=>{const pr=H.prevRank[id],mv=pr&&H.qi>0?pr-now[id]:0;
+      return `<div class="rrow ${now[id]==1?'top1':''}" style="animation-delay:${i*.06}s"><span class="pos">${now[id]}</span>${avSVG(p.av,46)}<span class="nm">${esc(p.name)}${p.streak>1?` <span title="Aciertos seguidos">🔥${p.streak}</span>`:''}<small>${esc(avN(p.av))}${mv>0?`<span class="mv up">▲${mv}</span>`:mv<0?`<span class="mv dn">▼${-mv}</span>`:''}</small></span><span class="dl">${p.last&&p.last.pts?'+'+p.last.pts:''}${p.last&&p.last.bonus?`<small class="bn">racha +${p.last.bonus}</small>`:''}</span><span class="sc">${p.score}</span></div>`}).join(''):'<p class="empty">No hay nadie conectado.</p>'}${nextB}<p class="muted" id="nowp" style="text-align:center"></p></div>`;return}
+  if(H.ph=='end'){const cols=['#d9443c','#2c6ed4','#f4a53a','#22935a','#8a52c6','#ffffff'];
+    let conf='';for(let i=0;i<110;i++)conf+=`<i style="left:${(Math.random()*100).toFixed(1)}%;background:${cols[i%cols.length]};animation-delay:${(Math.random()*2.5).toFixed(2)}s;animation-duration:${(2.8+Math.random()*2.4).toFixed(2)}s"></i>`;
+    const btns=`<div class="row" style="justify-content:center"><button class="btn big" onclick="exportXLSX()">📊 Exportar a Excel</button><button class="btn primary big" onclick="backLobby()">Nuevo concurso</button><button class="btn ghost" onclick="closeRoom()">Cerrar la sala</button></div>`;
+    const arr=[...H.P].sort((a,b)=>b[1].score-a[1].score);
+    if(H.cfg.teams){const ts=teamStats(),top=ts.slice(0,3);
+      const pd=(X,n)=>X?`<div class="pd p${n}"><div class="pdav">${tmAvs(X,n==1?64:48)}</div><b>${tN(X.i)}</b><span>${X.avg} puntos</span><div class="pdbox" style="background:${X.c};color:#fff">${n}.º</div></div>`:'<div class="pd"></div>';
+      A.innerHTML=fs+`<div class="conf">${conf}</div><div class="end"><p class="eyebrow">Fin del concurso${H.ended&&H.ended<H.qs.length?` · ${H.ended} de ${H.qs.length} preguntas`:''}</p><h1>🏆 ¡Gana el ${top[0]?tN(top[0].i):'…'}!</h1>
+        <div class="pdrow">${pd(top[1],2)}${pd(top[0],1)}${pd(top[2],3)}</div>
+        <div class="rank" style="width:100%">${ts.slice(3).map(X=>`<div class="rrow trow" style="--tc:${X.c}"><span class="pos">${X.pos}</span>${tmAvs(X,32)}<span class="nm">${tN(X.i)}</span><span class="dl"></span><span class="sc">${X.avg}</span></div>`).join('')}
+        ${arr[0]?`<p style="text-align:center;margin:8px 0 0">🏅 Mejor puntuación individual: <b>${esc(arr[0][1].name)}</b> (${esc(avN(arr[0][1].av))}), ${arr[0][1].score} puntos</p>`:''}</div>${btns}</div>`;return}
+    const top=arr.slice(0,3).map(x=>x[1]);
+    const pd=(p,n)=>p?`<div class="pd p${n}"><div class="pdav">${avSVG(p.av,n==1?150:108)}</div><b>${esc(p.name)}</b><span>${p.score} puntos</span><div class="pdbox">${n}.º</div></div>`:'<div class="pd"></div>';
+    A.innerHTML=fs+`<div class="conf">${conf}</div><div class="end"><p class="eyebrow">Fin del concurso${H.ended&&H.ended<H.qs.length?` · ${H.ended} de ${H.qs.length} preguntas`:''}</p><h1>🏆 ¡Enhorabuena!</h1>
+      <div class="pdrow">${pd(top[1],2)}${pd(top[0],1)}${pd(top[2],3)}</div>
+      <div class="rank" style="width:100%">${arr.slice(3).map(([id,p],i)=>`<div class="rrow"><span class="pos">${i+4}</span>${avSVG(p.av,40)}<span class="nm">${esc(p.name)}<small>${esc(avN(p.av))}</small></span><span class="dl"></span><span class="sc">${p.score}</span></div>`).join('')}</div>${btns}</div>`;
+    return}}
+
+/* QR para quien llega tarde: se puede mostrar en cualquier momento */
+function showQR(){let o=$('#qrov');if(o){o.remove();return}o=document.createElement('div');o.id='qrov';o.className='qrov';o.setAttribute('role','dialog');o.setAttribute('aria-label','Código QR para entrar');
+  o.innerHTML=`<div class="card join"><p class="eyebrow">¿Llegas tarde? Entra con el móvil</p><div class="qr">${qrSVG(joinURL())}</div><p class="url">${esc(joinURL().replace(/^https?:\/\//,''))}</p><div class="bigcode">${H.code}</div><button class="btn primary" onclick="showQR()">Cerrar</button></div>`;
+  o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.body.appendChild(o)}
+const FSE=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function togFS(){const d=document.documentElement;try{if(FSE()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return}const rq=d.requestFullscreen||d.webkitRequestFullscreen;if(!rq){toast('Prueba con la tecla F11.');return}const r=rq.call(d);r&&r.catch&&r.catch(()=>toast('Prueba con la tecla F11.'))}catch(e){toast('Prueba con la tecla F11.')}}
+
+/* ================= MÓVIL DEL ALUMNADO ================= */
+const SK='cdom-alumno';
+const S={cli:null,code:'',id:'',name:'',av:null,team:null,st:null,key:'',qid:null,sent:false,pl:{},deadline:0,joined:false,joining:false,msg:'',taken:new Set(),found:false,tm:null,out:false,hint:false,hide:[]};
+function sLoad(){try{return JSON.parse(sessionStorage.getItem(SK)||'null')}catch(e){return null}}
+function sSave(){try{sessionStorage.setItem(SK,JSON.stringify({id:S.id,name:S.name,av:S.av,code:S.code,team:S.team,joined:S.joined,qid:S.qid,pl:S.pl,hint:S.hint,hide:S.hide}))}catch(e){}}
+function studentStart(code){document.body.classList.remove('host');const sv=sLoad();S.id=(sv&&sv.id)||'a'+Math.random().toString(36).slice(2,10);
+  if(sv){S.name=sv.name||'';if(AVATARS[sv.av])S.av=sv.av;if(Number.isInteger(sv.team))S.team=sv.team}if(!S.av)S.av=ORDER[rnd(ORDER.length)];S.code=code||(sv&&sv.code)||'';
+  if(sv&&sv.joined&&/^[1-3]\d{3}$/.test(sv.code)&&(!code||code===sv.code)){S.code=sv.code;S.qid=sv.qid||null;S.pl=sv.pl||{};S.hint=!!sv.hint;S.hide=sv.hide||[];if(sv.sel!=null)S.sel=sv.sel;S.restored=true;
+    $('#app').innerHTML=`<div class="phone"><div class="state"><div class="wiggle">${avSVG(S.av,110)}</div><h2>Volviendo a la sala ${esc(S.code)}…</h2><p class="muted" style="margin:0">Eres ${esc(S.name)}. Conservas tus puntos.</p></div></div>`;
+    sConnect(S.code,()=>{S.joining=true;sPub({t:'hi',name:S.name,av:S.av,team:S.team});setTimeout(()=>{if(!S.joined){S.joining=false;S.msg='No se ha podido volver a entrar. Revisa el código y pulsa «Unirme».';vJoin()}},7000)},err=>{S.msg=err;vJoin()});clearInterval(S.tm);S.tm=setInterval(sTick,250);return}
+  vJoin();if(/^[1-3]\d{3}$/.test(S.code))sConnect(S.code,()=>{},()=>{});
+  clearInterval(S.tm);S.tm=setInterval(sTick,250)}
+function sConnect(code,ok,fail){if(S.cli&&S.cliCode===code&&S.cli.connected){ok();return}
+  try{S.cli&&S.cli.end(true)}catch(e){}S.cli=null;S.found=false;S.cliCode=code;const i=+code[0]-1;
+  connect(i,S.id,cli=>{S.cli=cli;cli.subscribe(T(code).host);cli.on('message',(t,b)=>{const s=b.toString();if(!s){if(S.joined){S.joined=false;S.msg='El profe ha cerrado la sala.';vJoin()}return}let m;try{m=JSON.parse(s)}catch(e){return}if(m.t==='st'){S.found=true;sOnState(m)}});
+    cli.on('connect',()=>{try{cli.subscribe(T(code).host)}catch(e){}if(S.joined)sPub({t:'hi',name:S.name,av:S.av,team:S.team})});ok()},fail,null,{max:i})}
+function sPub(o){if(S.cli&&S.cli.connected)S.cli.publish(T(S.cliCode).stu,JSON.stringify(Object.assign({from:S.id},o)),{qos:0})}
+function sMsg(t){S.msg=t;const e=$('#smsg');if(e)e.textContent=t}
+const nTeams=()=>(S.st&&S.st.cfg&&S.st.cfg.teams)||0;
+function sJoin(){const n=$('#s-name'),c=$('#s-code');S.name=(n&&n.value.trim())||'';const code=(c&&c.value.trim())||S.code;
+  if(!S.name){sMsg('Escribe tu nombre.');n&&n.focus();return}
+  if(!/^[1-3]\d{3}$/.test(code)){sMsg('Escribe el código de 4 cifras que aparece en la pantalla de clase.');return}
+  if(S.taken.has(S.av)&&ORDER.some(k=>!S.taken.has(k))){sMsg(avN(S.av)+' ya lo tiene otra persona. Elige otro compositor.');return}
+  if(nTeams()&&(S.team==null||S.team>=nTeams())){sMsg('Elige tu equipo.');return}
+  S.code=code;S.joining=true;sMsg('Entrando en la sala '+code+'…');const b=$('#s-join');if(b)b.disabled=true;
+  sConnect(code,()=>{sPub({t:'hi',name:S.name,av:S.av,team:S.team});setTimeout(()=>{if(!S.joined&&S.joining){S.joining=false;const b=$('#s-join');if(b)b.disabled=false;sMsg(S.found?'La pantalla de clase no responde. Vuelve a pulsar «Unirme».':'No se encuentra la sala '+code+'. Revisa el código y que la pantalla de clase tenga la sala abierta.')}},6500)},
+    err=>{S.joining=false;const b=$('#s-join');if(b)b.disabled=false;sMsg(err)})}
+function sOnState(m){S.st=m;S.taken=new Set(m.pl.filter(x=>x[0]!==S.id).map(x=>x[2]));
+  if(m.rej&&m.rej[S.id]&&!S.joined){if(S.joining){S.joining=false;sMsg(avN(m.rej[S.id])+' ya lo ha elegido otra persona. Elige otro compositor y pulsa «Unirme».');const b=$('#s-join');if(b)b.disabled=false}drawPick();drawTeams();return}
+  const me=m.pl.find(x=>x[0]===S.id);
+  if(!me){if(S.joined){S.joined=false;vJoin()}else{drawPick();drawTeams()}return}
+  if(!S.joined){S.joined=true;S.joining=false;S.av=me[2];toast('¡Dentro! Mira la pantalla de clase.')}
+  if(me[4]!=null)S.team=me[4];sSave();
+  if(S.restored&&m.ph=='q'&&m.qid===S.qid){S.deadline=Date.now()+m.left;S.restored=false}
+  if(m.ph=='q'&&m.qid!==S.qid){S.restored=false;S.qid=m.qid;S.sent=false;S.pl={};S.out=false;S.hint=false;S.hide=[];S.deadline=Date.now()+m.left}
+  if(m.ph=='q'&&m.done.includes(S.id))S.sent=true;
+  const key=[m.ph,m.qid,S.sent,S.out,nTeams()?S.team:''].join('|');
+  if(key!==S.key){S.key=key;sRender()}else if(m.ph=='lobby'){const e=$('#wcount');if(e)e.textContent=m.pl.length}}
+function sTick(){if(!S.joined||!S.st||S.st.ph!=='q'||S.sent)return;const left=S.deadline-Date.now(),f=Math.max(0,left/(S.st.tl||1));const b=$('#ptimer');if(b)b.style.width=(100*f)+'%';
+  if(left<=0&&!S.out){S.out=true;S.key='';sOnState(S.st)}}
+function drawPick(){const box=$('#s-av');if(!box)return;const all=!ORDER.some(k=>!S.taken.has(k));
+  box.innerHTML=ORDER.map(k=>{const tk=S.taken.has(k)&&!all;return `<button type="button" role="radio" aria-checked="${k===S.av}" data-av="${k}" class="${tk?'taken':''}" title="${esc(avN(k))}${tk?' (ya elegido)':''}" aria-label="${esc(avN(k))}${tk?', ya elegido':''}">${avSVG(k,44)}${tk?'<i class="lk">🔒</i>':''}</button>`}).join('');
+  const n=$('#s-avname');if(n)n.textContent='· '+avN(S.av)}
+function drawTeams(){const box=$('#s-teams');if(!box)return;const n=nTeams();box.hidden=!n;if(!n)return;
+  const cnt=Array(n).fill(0);S.st.pl.forEach(x=>{if(x[0]!==S.id&&x[4]!=null&&x[4]<n)cnt[x[4]]++});
+  box.innerHTML=`<span class="lbl">Elige tu equipo</span><div class="tpick" role="radiogroup" aria-label="Equipo">${TEAMS.slice(0,n).map((t,i)=>`<button type="button" role="radio" aria-checked="${S.team===i}" style="--tc:${t[1]}" onclick="S.team=${i};drawTeams()">${t[0]}<small>${cnt[i]} ${cnt[i]==1?'persona':'personas'}</small></button>`).join('')}</div>`}
+function avCard(anim){const card=$('#s-card');if(!card)return;const k=S.av,f=INFO[k]||['',''];
+  card.innerHTML=`<div class="avbig">${avSVG(k,76)}</div><div><b>${esc(avN(k))}</b><small>${f[0]}</small><p>${f[1]}</p></div>`;
+  if(anim){card.classList.remove('pop');void card.offsetWidth;card.classList.add('pop')}}
+function vJoin(){const A=$('#app');S.key='';
+  A.innerHTML=`<div class="phone"><div><p class="eyebrow">Concurso de armonía</p><h1>Entra en la sala</h1></div>
+  <div class="card" style="display:grid;gap:14px">
+    <div class="field"><label for="s-name">Tu nombre</label><input id="s-name" maxlength="20" autocomplete="off" placeholder="Por ejemplo, Lucía" value="${esc(S.name)}"></div>
+    <div class="field"><span class="lbl">Elige tu compositor/a <span class="muted" id="s-avname"></span></span><div class="avpick" id="s-av" role="radiogroup" aria-label="Compositor o compositora"></div></div>
+    <div class="avcard" id="s-card" aria-live="polite"></div>
+    <div class="field" id="s-teams" hidden></div>
+    <div class="field"><label for="s-code">Código de la sala</label><input id="s-code" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 cifras" value="${esc(S.code)}"></div>
+    <p class="msg" id="smsg">${esc(S.msg)}</p>
+    <button class="btn primary big" id="s-join" onclick="sJoin()">Unirme</button>
+  </div></div>`;
+  drawPick();drawTeams();avCard(false);
+  $('#s-av').addEventListener('click',e=>{const b=e.target.closest('[data-av]');if(!b)return;if(b.classList.contains('taken')){sMsg(avN(b.dataset.av)+' ya lo tiene otra persona. Elige otro.');return}S.av=b.dataset.av;sMsg('');drawPick();avCard(true)});
+  $('#s-code').addEventListener('change',e=>{const v=e.target.value.trim();if(/^[1-3]\d{3}$/.test(v)&&v!==S.cliCode)sConnect(v,()=>{},()=>{})});
+  $('#s-name').addEventListener('keydown',e=>{if(e.key==='Enter')sJoin()})}
+const teamBadge=()=>nTeams()&&S.team!=null&&TEAMS[S.team]?`<span class="tbadge" style="--tc:${TEAMS[S.team][1]}">${tN(S.team)}</span>`:'';
+function meHead(m){return `<div class="ptop"><span>${m.ph=='lobby'?'Sala '+esc(S.cliCode):m.ph=='end'?'Final':'Pregunta '+(m.qi+1)+' / '+m.n}</span><span class="me">${avSVG(S.av,30)}<span>${esc(S.name)}</span></span></div>`}
+function myRes(m){return (m.res&&m.res[S.id])||[0,0,0,0,0,0,0,0]}
+function myTeam(m){return m.tm&&S.team!=null?m.tm.find(x=>x[0]===S.team):null}
+const hintBtn=q=>`<button class="btn hintb" onclick="sHint()">💡 Pedir pista <small>Si aciertas, ganas ${HINT} puntos menos</small></button>`;
+function sRender(){const m=S.st,A=$('#app');if(!m)return;sSave();const q=m.q;let h=meHead(m);
+  if(m.ph=='lobby')h+=`<div class="state"><div class="wiggle">${avSVG(S.av,130)}</div><h2>¡Ya estás dentro!</h2>${teamBadge()}<p class="muted" style="margin:0">Eres ${esc(avN(S.av))}. Mira la pantalla de clase: el concurso empieza enseguida.</p><p class="muted" style="margin:0"><b id="wcount">${m.pl.length}</b> en la sala</p></div>`;
+  else if(m.ph=='q'&&q){
+    if(S.sent)h+=`<div class="state"><div class="wiggle">${avSVG(S.av,110)}</div><h2>✔ Respuesta enviada</h2><p class="muted" style="margin:0">Espera a que se cierre la pregunta.</p></div>`;
+    else if(S.out)h+=`<div class="state"><h2>⏱ Se acabó el tiempo</h2><p class="muted" style="margin:0">Esta vez no ha llegado tu respuesta. ¡A por la siguiente!</p></div>`;
+    else{h+=`<div class="tbar"><i id="ptimer"></i></div><p class="pprompt">${qPrompt(q)}</p>`;
+      if(isBuild(q))h+=`<div id="build"></div>`;
+      else{const o=qOpts(q);h+=(hasVis(q)?`<div class="paper">${stf(qNotes(q),q.ki)}</div>`:'')+(S.hint?`<p class="hintbox">💡 Pista: hemos quitado ${S.hide.length==1?'una respuesta incorrecta':'dos respuestas incorrectas'}.</p>`:'')+
+        `<div class="tiles ptiles ${q.ty=='t'||q.ty=='z'?'one':''}">${o.map((x,i)=>S.hide.includes(i)?`<button class="tile t${i%6} gone" disabled aria-label="Descartada"><i class="shp" aria-hidden="true">${SHAPES[i%6]}</i><span>${x}</span></button>`:`<button class="tile t${i%6}" onclick="sAns(${i})"><i class="shp" aria-hidden="true">${SHAPES[i%6]}</i><span>${x}</span></button>`).join('')}</div>`+(S.hint?'':hintBtn(q))}}}
+  else if((m.ph=='reveal'||m.ph=='rank')&&q){const r=myRes(m),mt=myTeam(m);
+    h+=`<div class="state">${r[0]?'<div class="verdict ok">✅ ¡Correcto!</div>':`<div class="verdict ko">${r[5]?'❌ Incorrecto':'⏱ Sin respuesta'}</div>`}${r[1]?`<div class="plus">+${r[1]} puntos</div>`:''}
+      ${r[7]?`<p class="streak">🔥 ${r[4]} seguidas: +${r[7]} de bonus</p>`:r[0]&&r[4]==2?'<p class="muted" style="margin:0">🔥 Llevas 2 seguidas: ¡a la tercera hay bonus!</p>':''}${r[6]?`<p class="muted" style="margin:0">💡 Usaste pista${r[0]?`: −${HINT} puntos`:''}</p>`:''}
+      <div class="stats"><div>Total<b>${r[2]}</b></div><div>Posición<b>${r[3]}.º</b></div>${mt?`<div style="border-color:${TEAMS[mt[0]][1]}">${esc(TEAMS[mt[0]][0])}<b>${mt[2]}.º</b></div>`:''}</div>
+      ${isBuild(q)?`<p class="muted" style="margin:0">Solución:</p><div class="paper" style="width:100%">${stf(qNotes(q),q.ki,1)}</div>`:`<p class="muted" style="margin:0">La respuesta correcta era:</p><div class="tile t${qCorrect(q)%6}" style="width:100%"><i class="shp">${SHAPES[qCorrect(q)%6]}</i><span>${qOpts(q)[qCorrect(q)]}</span></div>`}</div>`}
+  else if(m.ph=='end'){const r=myRes(m),mt=myTeam(m);
+    if(mt)h+=`<div class="state"><div class="wiggle">${avSVG(S.av,120)}</div>${teamBadge()}<h2>${mt[2]==1?'🏆 ¡Tu equipo ha ganado!':mt[2]<=3?'🎉 ¡Tu equipo está en el podio!':'¡Fin del concurso!'}</h2><div class="stats"><div>Equipo<b>${mt[2]}.º</b></div><div>Puntos del equipo<b>${mt[1]}</b></div><div>Tus puntos<b>${r[2]}</b></div></div></div>`;
+    else h+=`<div class="state"><div class="wiggle">${avSVG(S.av,130)}</div><h2>${r[3]==1?'🏆 ¡Has ganado!':r[3]<=3?'🎉 ¡Estás en el podio!':'¡Fin del concurso!'}</h2><div class="stats"><div>Puntos<b>${r[2]}</b></div><div>Posición<b>${r[3]}.º</b></div><div>De<b>${m.pl.length}</b></div></div></div>`}
+  else h+=`<div class="state"><h2>Espera un momento…</h2></div>`;
+  A.innerHTML=`<div class="phone">${h}</div>`;if(m.ph=='q'&&q&&isBuild(q)&&!S.sent&&!S.out)drawBuild();sTick()}
+function sHint(){const q=S.st&&S.st.q;if(!q||S.sent||S.out||S.hint)return;S.hint=true;if(!isBuild(q))S.hide=hintHide(q);if(isBuild(q))drawBuild();else sRender()}
+function sAns(i){if(S.sent||S.out||S.hide.includes(i))return;S.sent=true;sPub({t:'ans',qid:S.qid,a:i,h:S.hint?1:0});S.key='';sOnState(S.st)}
+/* construir el acorde: toca una nota para colocarla y vuelve a tocarla para quitarla */
+function drawBuild(){const q=S.st.q,el=$('#build');if(!el)return;sSave();const ki=q.ki,sig=sigOf(ki),placed=new Set(Object.values(S.pl)),W=440,per=6;
+  let bank='';for(let c=0;c<q.ord.length;c+=per){let g=base(ki,W);const x0=left0(ki)+34;q.ord.slice(c,c+per).forEach((id,i)=>{g+=`<g opacity="${placed.has(id)?.25:1}">${notes([q.P[id]],x0+i*50,sig,()=>COL.b,n=>`data-n="${n.id}"`)}</g>`});bank+=`<div class="paper"><svg viewBox="0 46 ${W} 160" role="img" aria-label="Notas disponibles">${g}</svg></div>`}
+  const ps=Object.values(S.pl).map(i=>q.P[i]).sort((a,b)=>a.s-b.s),C=cMid(ki,W);
+  let tg=base(ki,W)+`<rect x="${C-95}" y="62" width="190" height="130" rx="14" fill="none" stroke="#7fb3c4" stroke-dasharray="7 6"/>`;
+  if(!ps.length)tg+=`<text x="${C}" y="132" text-anchor="middle" fill="#5d8f9e" font-size="17">Aquí va tu acorde</text>`;
+  tg+=notes(ps,ps.length?cxOf(ps,ki,W):C,sig,()=>COL.b,n=>`data-p="${n.id}"`);
+  el.innerHTML=(S.hint?`<p class="hintbox">💡 ${buildHint(q)}</p>`:'')+`<div class="lbl" style="margin:4px 0">🎵 Notas disponibles · tócalas para ponerlas</div><div class="bank" id="bankz">${bank}</div>
+  <div class="lbl" style="margin:10px 0 4px">✏️ Tu acorde · toca una nota para quitarla</div><div class="paper tgt" id="tgtz"><svg viewBox="0 46 ${W} 160" role="img" aria-label="Tu acorde">${tg}</svg></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary big grow" onclick="sSendBuild()" ${ps.length?'':'disabled'}>Enviar acorde ✔</button><button class="btn" onclick="playChord(Object.values(S.pl).map(i=>S.st.q.P[i]))" ${ps.length?'':'disabled'}>🔊</button><button class="btn ghost" onclick="S.pl={};drawBuild()" ${ps.length?'':'disabled'}>Vaciar</button></div>`+(S.hint?'':`<div style="margin-top:10px">${hintBtn(q)}</div>`);
+  el.querySelectorAll('[data-n]').forEach(g=>g.addEventListener('click',()=>{const id=+g.dataset.n,n=q.P[id];if(S.pl[n.s]===id)delete S.pl[n.s];else S.pl[n.s]=id;playNote(n);drawBuild()}));
+  el.querySelectorAll('[data-p]').forEach(g=>g.addEventListener('click',()=>{const id=+g.dataset.p,n=q.P[id];if(S.pl[n.s]===id)delete S.pl[n.s];drawBuild()}))}
+function sSendBuild(){if(S.sent||S.out)return;const a=Object.values(S.pl).map(Number);if(!a.length)return;S.sent=true;sPub({t:'ans',qid:S.qid,a,h:S.hint?1:0});S.key='';sOnState(S.st)}
+
+/* ---------- arranque ---------- */
+setTimeout(function(){const h=location.hash;const m=h.match(/^#c([1-3]\d{3})$/);if(m)studentStart(m[1]);else if(h==='#alumno')studentStart('');else if(/^#p[1-3]\d{3}-[a-z0-9]{4,8}$/.test(h))remoteStart(h.slice(2,6),h.slice(7));else if(h==='#profe')remoteForm();else{const sv=hLoadSaved();if(sv&&Date.now()-sv.at<10*60e3)hostResume();else vHome()}},0);
+
+/* ================= música de concurso: adaptaciones de obras clásicas =================
+   Instrumentos: muestras reales de piano y de cuerda (las del examen de dominantes secundarias) + percusión sintetizada + reverberación de sala.
+   Espera y clasificación: popurrí de 7 obras, una detrás de otra.
+   Mientras se responde: una obra distinta en cada pregunta (6 que van rotando); acelera con la cuenta atrás y en los últimos segundos entra «El vuelo del moscardón». */
+const MUS={on:true,cur:null,timer:null,next:0,step:0,g:null,ph:null,urgent:false,prog:0,noise:null,li:0,si:0,piece:null,rev:null};
+try{MUS.on=localStorage.getItem('rep-arm-musica')!=='0'}catch(e){}
+const mf=m=>440*Math.pow(2,(m-69)/12);
+/* ---- instrumentos ---- */
+const SAMP={p:{src:PSMP,det:3,att:.004,rel:.3,vol:1,buf:null,st:0},v:{src:VSMP,det:4,att:.05,rel:.35,vol:1.1,buf:null,st:0}};
+function loadS(){for(const k in SAMP){const S=SAMP[k];if(S.st||!ctx())continue;S.st=1;try{const s=atob(S.src.split(',')[1]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);AC.decodeAudioData(u.buffer,x=>{S.buf=x},()=>{S.st=0})}catch(e){S.st=0}}}
+function sp(k,m,t,d,v,dest){const S=SAMP[k];if(!S.buf){osc(m,t,d,k=='v'?'sawtooth':'triangle',v*.35,dest,k=='v'?2200:3000);return}
+  const s=AC.createBufferSource(),g=AC.createGain(),dt=(m-72)*100+S.det,e=Math.max(.08,Math.min(d,S.buf.duration/Math.pow(2,dt/1200)-.02)),a=Math.min(S.att,e/3);v*=S.vol;
+  s.buffer=S.buf;s.detune.value=dt;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.setValueAtTime(v,t+Math.max(a+.02,e-Math.min(S.rel,e/2)));g.gain.linearRampToValueAtTime(0,t+e);
+  s.connect(g);g.connect(dest);s.start(t);s.stop(t+e+.05)}
+function noiseBuf(){if(MUS.noise&&MUS.noise.c===AC)return MUS.noise.b;const b=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;MUS.noise={c:AC,b};return b}
+function osc(m,t,d,type,v,dest,cut){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=mf(m);let n=o;if(cut){const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;o.connect(f);n=f}
+  n.connect(g);g.connect(dest);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.start(t);o.stop(t+d+.02)}
+function kick(t,v,dest){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(g);g.connect(dest);o.start(t);o.stop(t+.27)}
+function hiss(t,d,v,dest,type,freq){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf();f.type=type;f.frequency.value=freq;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(g);g.connect(dest);s.start(t);s.stop(t+d+.02)}
+function timp(m,t,v,dest){osc(m,t,.9,'sine',v,dest);hiss(t,.12,v*.25,dest,'lowpass',400)}
+/* sala: reverberación con una respuesta de impulso generada */
+function room(){if(MUS.rev&&MUS.rev.c===AC)return MUS.rev.n;const c=AC.createConvolver(),L=AC.sampleRate*2.2,b=AC.createBuffer(2,L,AC.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<L;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/L,3)}c.buffer=b;const w=AC.createGain();w.gain.value=.12;c.connect(w);w.connect(AC.destination);MUS.rev={c:AC,n:c};return c}
+function bus(vol){const g=AC.createGain();g.gain.value=0;g.gain.setTargetAtTime(vol,AC.currentTime,.15);const comp=AC.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=4;g.connect(comp);comp.connect(AC.destination);comp.connect(room());return g}
+
+/* ---- partituras: [nota MIDI o null, duración en semicorcheas]; acordes: [bajo, [notas]] cada «cs» semicorcheas ---- */
+const G7=[43,[59,62,67]],GG=[43,[55,59,62]],D7=[38,[54,57,60]],DD=[38,[54,57,62]],CC=[36,[55,60,64]],AM=[45,[57,60,64]],EE=[40,[56,59,64]],BB=[35,[54,59,63]],EM=[40,[55,59,64]],BM=[35,[54,59,62]],FSM=[42,[54,57,61]],AA=[45,[57,61,64]],
+  GM=[43,[55,58,62]],CM=[36,[55,60,63]],ADIM=[45,[57,60,63]],DM=[38,[57,62,65]],FM=[41,[56,60,65]],E7=[40,[56,59,62]],B7=[35,[54,57,63]],FF=[41,[57,60,65]],
+  GMAJ7=[43,[59,62,66]],DMAJ7=[38,[57,61,66]];
+const MOZ=[[67,4],[null,2],[62,2],[67,4],[null,2],[62,2],[67,2],[62,2],[67,2],[71,2],[74,8],[72,4],[null,2],[69,2],[72,4],[null,2],[69,2],[72,2],[69,2],[66,2],[69,2],[62,8]];
+const LOBBY=[
+ {c:'Mozart',w:'Pequeña serenata nocturna',ins:'v',bpm:120,bar:16,st:'pop',mel:MOZ.concat(MOZ.map(([m,d])=>[m&&m+12,d])),ch:[GG,GG,D7,DD,GG,GG,D7,DD]},
+ {c:'Beethoven',w:'Himno de la alegría',ins:'p',bpm:116,bar:16,st:'pop',mel:[[71,4],[71,4],[72,4],[74,4],[74,4],[72,4],[71,4],[69,4],[67,4],[67,4],[69,4],[71,4],[71,6],[69,2],[69,8],[71,4],[71,4],[72,4],[74,4],[74,4],[72,4],[71,4],[69,4],[67,4],[67,4],[69,4],[71,4],[69,6],[67,2],[67,8]],ch:[GG,DD,GG,DD,GG,DD,GG,GG]},
+ {c:'Bach (Petzold)',w:'Minueto en Sol',ins:'p',bpm:132,bar:12,st:'waltz',mel:[[74,4],[67,2],[69,2],[71,2],[72,2],[74,4],[67,4],[67,4],[76,4],[72,2],[74,2],[76,2],[78,2],[79,4],[67,4],[67,4],[72,4],[74,2],[72,2],[71,2],[69,2],[71,4],[72,2],[71,2],[69,2],[67,2],[66,4],[67,2],[69,2],[71,2],[67,2],[69,12]],ch:[GG,GG,CC,GG,AM,GG,DD,DD]},
+ {c:'Pachelbel',w:'Canon',ins:'v',bpm:96,bar:16,cs:8,st:'canon',mel:[[78,4],[76,4],[74,4],[73,4],[71,4],[69,4],[71,4],[73,4],[74,4],[73,4],[71,4],[69,4],[67,4],[66,4],[67,4],[64,4],[90,4],[88,4],[86,4],[85,4],[83,4],[81,4],[83,4],[85,4],[86,4],[85,4],[83,4],[81,4],[79,4],[78,4],[79,4],[76,4]].map(([m,d],i)=>[i>=16?m-12:m,d]),
+   ch:[DD,[33,[57,61,64]],[35,[59,62,66]],[30,[54,57,61]],[31,[55,59,62]],[26,[54,57,62]],[31,[55,59,62]],[33,[57,61,64]],DD,[33,[57,61,64]],[35,[59,62,66]],[30,[54,57,61]],[31,[55,59,62]],[26,[54,57,62]],[31,[55,59,62]],[33,[57,61,64]]]},
+ {c:'Vivaldi',w:'La primavera',ins:'v',bpm:104,bar:16,st:'pop',mel:[[64,2],[68,2],[68,2],[68,2],[66,1],[64,1],[71,6],[71,1],[69,1],[68,2],[68,2],[68,2],[66,1],[64,1],[71,6],[52,2],[56,2],[56,2],[56,2],[54,1],[52,1],[59,6],[59,1],[57,1],[56,2],[56,2],[56,2],[54,1],[52,1],[59,6]].map(([m,d],i)=>[i>=15?m+12:m,d]),ch:[EE,EE,EE,[35,[54,59,63]]]},
+ {c:'Haydn',w:'Sinfonía «La sorpresa»',ins:'v',bpm:112,bar:16,st:'pop',surprise:4,mel:[[72,2],[72,2],[76,2],[76,2],[79,2],[79,2],[76,4],[77,2],[77,2],[74,2],[74,2],[71,2],[71,2],[67,4],[72,2],[72,2],[76,2],[76,2],[79,2],[79,2],[76,4],[77,2],[77,2],[74,2],[74,2],[71,2],[71,2],[67,4]],ch:[CC,G7,CC,G7]},
+ {c:'Satie',w:'Gymnopédie n.º 1',ins:'p',bpm:76,bar:12,st:'calm',mel:[[null,4],[78,4],[81,4],[79,4],[78,4],[73,4],[71,4],[73,4],[74,4],[69,12],[66,12],[null,12],[null,12],[null,12]],ch:[GMAJ7,DMAJ7,GMAJ7,DMAJ7,GMAJ7,DMAJ7,GMAJ7,DMAJ7]}];
+const SUSP=[
+ {c:'Grieg',w:'En la gruta del rey de la montaña',ins:'v',bpm:92,bar:16,st:'susp',mel:[[59,2],[61,2],[62,2],[64,2],[66,2],[62,2],[66,4],[65,2],[61,2],[65,4],[64,2],[60,2],[64,4],[59,2],[61,2],[62,2],[64,2],[66,2],[62,2],[66,2],[71,2],[69,2],[66,2],[62,2],[66,2],[69,8],
+   [66,2],[68,2],[69,2],[71,2],[73,2],[69,2],[73,4],[72,2],[68,2],[72,4],[71,2],[67,2],[71,4],[66,2],[68,2],[69,2],[71,2],[73,2],[69,2],[73,2],[78,2],[76,2],[73,2],[69,2],[73,2],[76,8]],ch:[BM,BM,BM,BM,FSM,FSM,FSM,FSM]},
+ {c:'Mozart',w:'Marcha turca',ins:'p',bpm:112,bar:16,cs:8,st:'susp',hi:1,mel:[[72,2],[null,2],[74,1],[72,1],[71,1],[72,1],[76,2],[null,2],[77,1],[76,1],[75,1],[76,1],[83,1],[81,1],[80,1],[81,1],[83,1],[81,1],[80,1],[81,1],[84,4],[81,2],[84,2],
+   [83,2],[81,2],[79,2],[81,2],[83,2],[81,2],[79,2],[81,2],[83,2],[81,2],[79,2],[78,2],[76,4],[71,1],[69,1],[68,1],[69,1]],ch:[AM,AM,AM,AM,EM,EM,B7,EE]},
+ {c:'Beethoven',w:'Para Elisa',ins:'p',bpm:66,bar:6,st:'arp',hi:1,mel:[[76,1],[75,1],[76,1],[71,1],[74,1],[72,1],[69,2],[null,1],[60,1],[64,1],[69,1],[71,2],[null,1],[64,1],[68,1],[71,1],[72,2],[null,1],[64,1],[76,1],[75,1],
+   [76,1],[75,1],[76,1],[71,1],[74,1],[72,1],[69,2],[null,1],[60,1],[64,1],[69,1],[71,2],[null,1],[64,1],[72,1],[71,1],[69,4],[76,1],[75,1]],ch:[AM,AM,EE,AM,AM,AM,EE,AM]},
+ {c:'Mozart',w:'Sinfonía n.º 40',ins:'v',bpm:104,bar:16,st:'susp',mel:[[74,4],[75,2],[74,2],[74,4],[75,2],[74,2],[74,4],[82,8],[82,2],[81,2],[79,4],[79,2],[77,2],[75,4],[75,2],[74,2],[72,4],[72,8],[74,2],[72,2],[72,4],[72,2],[70,2],[69,4],[69,2],[67,2],[66,4],[66,8],[75,2],[74,2]],ch:[GM,GM,GM,ADIM,[38,[54,60,62]],[38,[54,57,60]]]},
+ {c:'Bizet',w:'Habanera (Carmen)',ins:'v',bpm:84,bar:8,st:'habanera',mel:[[74,4],[73,2],[72,2],[71,2],[70,2],[69,2],[69,2],[67,2],[67,2],[65,2],[65,2],[64,6],[null,2],[74,4],[73,2],[72,2],[71,2],[70,2],[69,2],[69,2],[67,2],[67,2],[65,2],[64,2],[62,6],[null,2]],ch:[DM,DM,[45,[57,61,64]],[45,[55,61,64]],DM,DM,[45,[57,61,64]],DM]},
+ {c:'Beethoven',w:'Quinta sinfonía',ins:'v',bpm:108,bar:8,st:'susp',mel:[[null,2],[67,2],[67,2],[67,2],[63,8],[null,2],[65,2],[65,2],[65,2],[62,8],[null,2],[67,2],[67,2],[67,2],[63,2],[68,2],[68,2],[68,2],[67,2],[75,2],[75,2],[75,2],[72,8]],ch:[CM,CM,[43,[55,59,65]],[43,[55,59,65]],CM,[41,[56,60,65]],CM,CM]}];
+LOBBY.concat(SUSP).forEach(P=>{let st=0;P.ev={};P.mel.forEach(([m,d])=>{if(m!=null)(P.ev[st]=P.ev[st]||[]).push([m,d]);st+=d});P.len=st;P.cs=P.cs||P.bar});
+const BEE=[88,87,86,85,86,85,84,83,84,83,82,81,82,81,80,79,80,79,78,77,78,77,76,75,76,77,78,79,80,81,82,83];
+const pieceName=P=>P?`${P.c}, <i>${P.w}</i>`:'';
+function showNow(){const e=$('#nowp');if(e)e.innerHTML=MUS.on&&MUS.piece?'🎵 '+pieceName(MUS.piece)+' (adaptación)':''}
+
+/* ---- acompañamientos ---- */
+function accomp(P,s,t,o,dur){const b=s%P.bar,ci=Math.floor(s/P.cs)%P.ch.length,[root,ch]=P.ch[ci],cb=s%P.cs,p=MUS.prog,u=MUS.urgent,ins=P.ins;
+  switch(P.st){
+  case 'pop':if(b%8==0)kick(t,.9,o);if(b==4||b==12){snare(t,.7,o);clap(t,.4,o)}if(b%2==0)hat(t,b%4==2?.22:.1,o,b%16==14);if(b%4==3)hat(t,.06,o);
+    if(b%4==0)sp('p',b%8==0?root:root+7,t,dur*3.5,.42,o);if(b%4==2)ch.forEach(m=>sp('p',m,t,dur*1.6,.13,o));
+    if(P.surprise!=null&&s==P.surprise*16-4){ch.forEach(m=>sp('v',m+12,t,.9,.5,o));kick(t,1.4,o);timp(31,t,.9,o)}break;
+  case 'waltz':if(b==0){sp('p',root,t,dur*3.5,.45,o);kick(t,.45,o)}if(b==4||b==8)ch.forEach(m=>sp('p',m,t,dur*3,.13,o));if(b%4==0)hiss(t,.03,.05,o,'highpass',8000);break;
+  case 'calm':if(b==0)sp('p',root,t,dur*10,.4,o);if(b==4)ch.forEach(m=>sp('p',m,t,dur*7,.14,o));break;
+  case 'canon':if(cb==0){sp('v',root+12,t,dur*7.5,.42,o);sp('p',root,t,dur*7,.3,o)}if(cb==4)ch.forEach(m=>sp('p',m,t,dur*3,.1,o));if(b%4==0)hiss(t,.03,.05,o,'highpass',8000);break;
+  case 'habanera':{const hb={0:root,3:root,4:root+7,6:root+12}[b%8];if(hb!=null){sp('v',hb,t,dur*2.2,.4+.2*p,o);if(b%8==0)kick(t,.5+.4*p,o)}if(b%2==0)hiss(t,.03,.07+.08*p,o,'highpass',8000);
+    if(b%8==4&&p>.4)ch.forEach(m=>sp('p',m,t,dur*1.5,.1,o));break}
+  case 'arp':if(b==0){sp('p',root-12,t,dur*5,.42,o);if(p>.35)kick(t,.4+.4*p,o)}hiss(t,.03,b==0?.12:.05,o,'highpass',8500);if(p>.6&&b==3)timp(root-12,t,.5,o);break;
+  default:/* susp */if(b%2==0)sp('p',root+(b%4==2?12:0),t,dur*1.6,.32+.2*p,o);if(p>.5&&b%2==1)hat(t,.08+.1*p,o);
+    if(p>.25&&b%8==0)kick(t,.55+.4*p,o);if(p>.55&&b%4==0)timp(root-12,t,.35+.3*p,o);if(p>.7&&cb==0)ch.forEach(m=>sp('v',m+12,t,dur*P.cs*.9,.07,o))}
+  if(MUS.cur=='q'&&b%4==0)tick(t,.55+.3*p,o,b%8==0);
+  if(u&&MUS.cur=='q')osc(BEE[MUS.step%BEE.length],t,.07,'sawtooth',.05,o,4200)}
+function playStep(){const P=MUS.piece,o=MUS.g,t=MUS.next,susp=MUS.cur=='q',p=MUS.prog;
+  const bpm=susp?(MUS.urgent?P.bpm*2:P.bpm*(1+.85*p)):P.bpm,dur=60/bpm/4,s=MUS.step%P.len;
+  const shift=susp&&p>.55&&!P.hi?12:0,lv=susp?.36+.2*p:.4;
+  (P.ev[s]||[]).forEach(([m,d])=>{sp(P.ins,m+shift,t,Math.max(.12,d*dur*(P.ins=='v'?1:1.3)),lv,o);if(susp&&p>.45)sp(P.ins=='v'?'p':'v',m+shift-12,t,Math.max(.12,d*dur),.16,o)});
+  accomp(P,s,t,o,dur);MUS.next+=dur;MUS.step++;
+  if(!susp&&MUS.step>=P.len){MUS.step=0;MUS.li=(MUS.li+1)%LOBBY.length;MUS.piece=LOBBY[MUS.li];showNow()}}
+function musSched(){if(!AC||!MUS.g||!MUS.piece)return;let n=0;while(MUS.next<AC.currentTime+.18&&n++<64)playStep()}
+function musStart(kind){if(MUS.cur===kind&&MUS.g)return;musStop();if(!MUS.on)return;const a=ctx();if(!a)return;loadS();
+  MUS.cur=kind;MUS.step=0;MUS.urgent=false;MUS.prog=0;MUS.piece=kind=='lobby'?LOBBY[MUS.li%LOBBY.length]:SUSP[MUS.si++%SUSP.length];
+  MUS.g=bus(kind=='lobby'?.42:.45);MUS.next=a.currentTime+.12;MUS.timer=setInterval(musSched,40);showNow()}
+function musStop(){clearInterval(MUS.timer);MUS.timer=null;MUS.cur=null;if(MUS.g&&AC){const g=MUS.g;try{g.gain.setTargetAtTime(0,AC.currentTime,.06)}catch(e){}setTimeout(()=>{try{g.disconnect()}catch(e){}},600)}MUS.g=null}
+function sting(kind){if(!MUS.on)return;loadS();wk(()=>{const t=AC.currentTime+.03,o=bus(.7);
+  if(kind=='reveal'){if(Math.random()<.5){/* Beethoven, Quinta: sol-sol-sol-mi bemol */[[67,0,.13],[67,.15,.13],[67,.3,.13],[63,.45,1.5]].forEach(([m,d,l])=>{sp('v',m,t+d,l,.55,o);sp('v',m-12,t+d,l,.45,o);sp('p',m-24,t+d,l,.4,o)});timp(31,t+.45,.8,o)}
+    else{/* Bach, Tocata y fuga en re menor: la-sol-la, sol-fa-mi-re-do#-re */[[81,0,.09],[79,.09,.09],[81,.18,.7],[79,.95,.08],[77,1.03,.08],[76,1.11,.08],[74,1.19,.08],[73,1.27,.35],[74,1.65,1.4]].forEach(([m,d,l])=>{sp('v',m,t+d,l,.5,o);sp('v',m-12,t+d,l,.45,o)});[50,57,62,65].forEach(m=>sp('p',m-12,t+1.65,1.6,.35,o))}}
+  else{/* podio: Himno de la alegría en fanfarria con timbales */const F=[[71,0,.3],[71,.32,.3],[72,.64,.3],[74,.96,.3],[74,1.28,.3],[72,1.6,.3],[71,1.92,.3],[69,2.24,.3],[67,2.56,.3],[67,2.88,.3],[69,3.2,.3],[71,3.52,.3],[69,3.84,.48],[67,4.32,.16],[67,4.48,2.2]];
+    F.forEach(([m,d,l])=>{sp('v',m,t+d,l,.5,o);sp('v',m-12,t+d,l,.35,o);osc(m,t+d,l,'sawtooth',.04,o,2400)});[43,50,55,59,62].forEach(m=>sp('p',m,t+4.48,2.6,.35,o));
+    for(let i=0;i<8;i++)timp(i%2?38:31,t+i*.64,.6,o);for(let i=0;i<6;i++)timp(31,t+4.48+i*.07,.5,o)}})}
+function musPhase(ph){if(ph===MUS.ph)return;MUS.ph=ph;
+  if(ph=='lobby'||ph=='rank')musStart('lobby');else if(ph=='q'){musStop();musStart('q')}
+  else if(ph=='reveal'){musStop();sting('reveal')}
+  else if(ph=='end'){musStop();sting('end');setTimeout(()=>{if(MUS.ph=='end')musStart('lobby')},7400)}
+  else musStop()}
+function togMus(){MUS.on=!MUS.on;try{localStorage.setItem('rep-arm-musica',MUS.on?'1':'0')}catch(e){}const ph=MUS.ph;MUS.ph=null;if(MUS.on)musPhase(ph);else{musStop();MUS.ph=ph}const b=$('#musb');if(b)b.textContent=MUS.on?'🎵 Música: sí':'🔇 Música: no';showNow()}
+
+/* ---- sonido «de concurso»: sintetizadores brillantes y percusión electrónica (sonidos propios, al estilo de los concursos) ---- */
+function pan(dest,p){try{const s=AC.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,p));s.connect(dest);return s}catch(e){return dest}}
+function lead(m,t,d,v,dest){const f=mf(m),out=AC.createGain(),flt=AC.createBiquadFilter(),e=Math.max(.07,d);flt.type='lowpass';flt.Q.value=3;
+  flt.frequency.setValueAtTime(900,t);flt.frequency.exponentialRampToValueAtTime(Math.min(9000,f*9),t+.015);flt.frequency.exponentialRampToValueAtTime(Math.min(4500,f*4),t+.22);
+  [[-9,'sawtooth',-.25],[9,'square',.25]].forEach(([dt,ty,pp])=>{const o=AC.createOscillator(),gg=AC.createGain();o.type=ty;o.frequency.value=f;o.detune.value=dt;gg.gain.value=.5;o.connect(gg);gg.connect(flt);o.start(t);o.stop(t+e+.2)});
+  out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(v*.34,t+.004);out.gain.exponentialRampToValueAtTime(v*.2,t+.12);out.gain.setValueAtTime(v*.2,t+e);out.gain.exponentialRampToValueAtTime(.0005,t+e+.15);flt.connect(out);out.connect(dest)}
+function pluck(m,t,d,v,dest,pn){const f=mf(m),g=AC.createGain(),o=AC.createOscillator(),o2=AC.createOscillator(),flt=AC.createBiquadFilter(),e=Math.min(.55,Math.max(.14,d));
+  o.type='square';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2;flt.type='lowpass';flt.Q.value=2;flt.frequency.setValueAtTime(Math.min(12000,f*14),t);flt.frequency.exponentialRampToValueAtTime(Math.max(400,f*1.6),t+.16);
+  o.connect(flt);o2.connect(flt);flt.connect(g);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*.3,t+.002);g.gain.exponentialRampToValueAtTime(.0005,t+e);g.connect(pan(dest,pn||0));o.start(t);o2.start(t);o.stop(t+e+.02);o2.stop(t+e+.02)}
+function sbass(m,t,d,v,dest){while(m<36)m+=12;const f=mf(m),g=AC.createGain(),o=AC.createOscillator(),s=AC.createOscillator(),flt=AC.createBiquadFilter(),e=Math.min(.45,Math.max(.1,d));
+  o.type='sawtooth';s.type='sine';o.frequency.value=f;s.frequency.value=f;flt.type='lowpass';flt.Q.value=7;flt.frequency.setValueAtTime(2200,t);flt.frequency.exponentialRampToValueAtTime(240,t+.14);
+  o.connect(flt);flt.connect(g);s.connect(g);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*.6,t+.003);g.gain.exponentialRampToValueAtTime(v*.3,t+.09);g.gain.exponentialRampToValueAtTime(.0005,t+e);g.connect(dest);o.start(t);s.start(t);o.stop(t+e+.02);s.stop(t+e+.02)}
+function sp(k,m,t,d,v,dest){if(m<52)return sbass(m,t,d,v,dest);if(k=='p')return pluck(m,t,d,v*1.2,dest,((m%5)-2)*.18);lead(m,t,d,v,dest);pluck(m+12,t,.16,v*.4,dest,.35)}
+function kick(t,v,dest){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(46,t+.09);g.gain.setValueAtTime(v*1.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.32);o.connect(g);g.connect(dest);o.start(t);o.stop(t+.34);hiss(t,.012,v*.35,dest,'highpass',3500)}
+function snare(t,v,dest){hiss(t,.17,v*.45,dest,'highpass',1500);const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.setValueAtTime(240,t);o.frequency.exponentialRampToValueAtTime(160,t+.06);g.gain.setValueAtTime(v*.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);o.connect(g);g.connect(dest);o.start(t);o.stop(t+.12)}
+function clap(t,v,dest){[0,.012,.024].forEach(d=>hiss(t+d,.06,v*.4,dest,'bandpass',1400));hiss(t+.036,.18,v*.3,dest,'bandpass',1200)}
+function hat(t,v,dest,open){hiss(t,open?.2:.032,v*.8,pan(dest,.25),'highpass',open?7000:9500)}
+/* reloj de concurso: tic-tac de bloque de madera */
+function tick(t,v,dest,hi){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(hi?1900:1350,t);g.gain.setValueAtTime(v*.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.045);o.connect(g);g.connect(pan(dest,hi?-.2:.2));o.start(t);o.stop(t+.05);hiss(t,.015,v*.25,dest,'bandpass',hi?3200:2400)}
+function timp(m,t,v,dest){while(m<36)m+=12;const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(mf(m)*1.5,t);o.frequency.exponentialRampToValueAtTime(mf(m),t+.05);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.7);o.connect(g);g.connect(dest);o.start(t);o.stop(t+.72);hiss(t,.08,v*.3,dest,'lowpass',600)}
+function loadS(){}
+
+/* ================= terminar en cualquier momento y exportar a Excel ================= */
+let ENDARM=0;
+function endNow(){if(!['q','reveal','rank'].includes(H.ph))return;const b=$('#endb');
+  if(!ENDARM){ENDARM=1;if(b){b.textContent='¿Terminar ya? Pulsa otra vez';b.classList.add('arm')}setTimeout(()=>{ENDARM=0;const b=$('#endb');if(b){b.textContent='⏹ Terminar';b.classList.remove('arm')}},3500);return}
+  ENDARM=0;endDo()}
+const endBtn=()=>['q','reveal','rank'].includes(H.ph)?`<button class="btn ghost" id="endb" onclick="endNow()">⏹ Terminar</button>`:'';
+const xlsBtn=()=>H.qs.length&&H.ph!='lobby'?`<button class="btn ghost" onclick="exportXLSX()">📊 Excel</button>`:'';
+/* texto plano a partir del HTML de enunciados y cifrados (las cifras apiladas se escriben 6/5, la tachada con ̸) */
+function plainTxt(html){const d=document.createElement('div');d.innerHTML=String(html);
+  d.querySelectorAll('.fg').forEach(f=>{f.textContent=[...f.querySelectorAll('b')].map(b=>b.textContent+(b.querySelector('.sl')?'̸':'')).join('/')});
+  d.querySelectorAll('small').forEach(s=>{s.textContent=' ('+s.textContent+')'});return d.textContent.replace(/\s+/g,' ').trim()}
+function corrTxt(q){if(isBuild(q))return qNotes(q).slice().sort((a,b)=>a.s-b.s).map(nn).join(' – ');return plainTxt(qOpts(q)[qCorrect(q)])}
+const played=()=>Math.max(0,Math.min(H.qs.length,H.ended||(H.ph=='end'?H.qs.length:H.ph=='q'?H.qi:H.qi+1)));
+function buildSheets(){const n=played(),qs=H.qs.slice(0,n),arr=[...H.P].sort((a,b)=>b[1].score-a[1].score),rk=rankMap(),teams=typeof teamStats=='function'&&H.cfg.teams;
+  const hs=p=>p.hist||[],ok=p=>hs(p).filter(h=>h&&h.ok).length,hints=p=>hs(p).filter(h=>h&&h.hint).length,best=p=>{let b=0,c=0;hs(p).forEach(h=>{c=h&&h.ok?c+1:0;b=Math.max(b,c)});return b};
+  const head=['Posición','Nombre','Compositor/a'].concat(teams?['Equipo']:[]).concat(['Puntos','Aciertos','Preguntas','% de aciertos','Pistas pedidas','Mejor racha']);
+  const rows=[head].concat(arr.map(([id,p])=>[rk[id],p.name,avN(p.av)].concat(teams?[p.team!=null&&TEAMS[p.team]?tN(p.team):'']:[]).concat([p.score,ok(p),n,n?Math.round(100*ok(p)/n):0,hints(p),best(p)])));
+  const det=[['Nombre'].concat(qs.map((_,i)=>'P'+(i+1)))].concat(arr.map(([id,p])=>[p.name].concat(qs.map((_,i)=>{const h=hs(p)[i];return !h||!h.answered?'—':h.ok?'✔ +'+h.pts+(h.hint?' (pista)':''):'✘'+(h.hint?' (pista)':'')}))));
+  const pq=[['Nº','Examen','Enunciado','Respuesta correcta','Aciertos','Respuestas']].concat(qs.map((q,i)=>{const hh=[...H.P.values()].map(p=>hs(p)[i]).filter(Boolean);return [i+1,BANKN[qSrc(q)],plainTxt(qPrompt(q)),corrTxt(q),hh.filter(h=>h.ok).length,hh.filter(h=>h.answered).length]}));
+  const out=[['Ranking',rows,[10,22,22].concat(teams?[16]:[]).concat([10,10,11,14,14,12])]];
+  if(teams)out.push(['Equipos',[['Posición','Equipo','Miembros','Puntos (media)']].concat(teamStats().map(X=>[X.pos,tN(X.i),X.m.map(p=>p.name).join(', '),X.avg])),[10,18,50,16]]);
+  out.push(['Detalle',det,[22].concat(qs.map(()=>14))],['Preguntas',pq,[6,24,70,30,10,12]]);return out}
+/* generador propio de archivos .xlsx (sin conexión ni librerías): ZIP sin comprimir + hojas en XML */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  files.forEach(([name,txt])=>{const nm=enc.encode(name),d=enc.encode(txt),crc=crc32(d);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,d);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),nm);off+=30+nm.length+d.length});
+  const cs=cen.reduce((x,y)=>x+y.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+const xe=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+const colL=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
+function sheetXML(rows,w){const NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="${NS}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${w.map((x,i)=>`<col min="${i+1}" max="${i+1}" width="${x}" customWidth="1"/>`).join('')}</cols><sheetData>${rows.map((r,ri)=>`<row r="${ri+1}">${r.map((v,ci)=>{const ref=colL(ci)+(ri+1),st=ri==0?' s="1"':'';return typeof v=='number'&&isFinite(v)?`<c r="${ref}"${st}><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${xe(v==null?'':v)}</t></is></c>`}).join('')}</row>`).join('')}</sheetData></worksheet>`}
+function makeXLSX(sheets){const R='http://schemas.openxmlformats.org/officeDocument/2006/relationships',P='http://schemas.openxmlformats.org/package/2006';
+  const f=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="${P}/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
+    ['_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${P}/relationships"><Relationship Id="rId1" Type="${R}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${R}"><sheets>${sheets.map(([n],i)=>`<sheet name="${xe(n).slice(0,31)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`],
+    ['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${P}/relationships">${sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="${R}/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="${R}/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF123843"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>`]];
+  sheets.forEach(([n,rows,w],i)=>f.push([`xl/worksheets/sheet${i+1}.xml`,sheetXML(rows,w)]));return zipStore(f)}
+function fileName(){const d=new Date(),z=x=>String(x).padStart(2,'0');return `${document.title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-')}_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}`}
+function exportXLSX(){if(!H.P.size){toast('No hay nadie en la sala.');return}const fn=fileName()+'.xlsx',blob=makeXLSX(buildSheets());window.__lastXLSX=blob;
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);toast('Excel descargado: '+fn)}
+const confetti=()=>{const cols=['#d9443c','#2c6ed4','#f4a53a','#22935a','#8a52c6','#ffffff'];let c='';for(let i=0;i<110;i++)c+=`<i style="left:${(Math.random()*100).toFixed(1)}%;background:${cols[i%cols.length]};animation-delay:${(Math.random()*2.5).toFixed(2)}s;animation-duration:${(2.8+Math.random()*2.4).toFixed(2)}s"></i>`;return `<div class="conf">${c}</div>`};
+
+/* ================= MÓVIL DEL PROFE (mando): ve la respuesta correcta antes de corregir y controla la sala ================= */
+function hKey(){if(!H.key)H.key=Math.random().toString(36).slice(2,8);return H.key}
+const remoteURL=()=>baseURL()+'#p'+H.code+'-'+hKey();
+function showRemote(){let o=$('#qrov');if(o){o.remove();return}o=document.createElement('div');o.id='qrov';o.className='qrov';o.setAttribute('role','dialog');o.setAttribute('aria-label','Móvil del profe');
+  o.innerHTML=`<div class="card join"><p class="eyebrow">🔑 Móvil del profe</p><p style="margin:0">Con este QR tu móvil ve la respuesta correcta de cada pregunta y puede corregir, pasar a la siguiente y terminar.</p>
+    <div class="qr blurred" id="rqr">${qrSVG(remoteURL())}<button class="btn primary" onclick="this.parentNode.classList.remove('blurred');document.getElementById('rkey').hidden=false;this.remove()">Mostrar el QR y la clave</button></div>
+    <p class="warn" style="margin:0">Los alumnos no deben verlo: congela o apaga el proyector antes de pulsar «Mostrar».</p>
+    <p class="muted" id="rkey" hidden style="margin:0">También puedes entrar en la página desde tu móvil, pulsar «🔑 Mando del profe» y escribir:<br>sala <b>${H.code}</b> · clave <b class="mono">${hKey()}</b></p>
+    <button class="btn" onclick="showRemote()">Cerrar</button></div>`;
+  o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.body.appendChild(o)}
+const remoteBtn=()=>H.code&&H.ph!='conn'&&H.ph!='fail'?`<button class="btn ghost" onclick="showRemote()">🔑 Móvil del profe</button>`:'';
+function endDo(){if(!['q','reveal','rank'].includes(H.ph))return;if(H.ph=='q'){if(typeof closeQ=='function')closeQ();else correct()}H.ended=H.qi+1;finish()}
+function hCtl(c){const last=H.qi+1>=H.qs.length,cq=typeof closeQ=='function';
+  if(c=='start'&&H.ph=='lobby')startQuiz();
+  else if(c=='close'&&H.ph=='q'){cq?closeQ():correct()}
+  else if(c=='next'){if(H.ph=='reveal'){if(cq)showRank();else last?finish():nextQ()}else if(H.ph=='rank')last?finish():nextQ()}
+  else if(c=='end')endDo();
+  else if(c=='hear')hearQ()}
+
+/* ---- la vista del mando en el móvil ---- */
+const RM={cli:null,code:'',key:'',st:null,arm:0,tm:null};
+function remoteForm(msg){document.body.classList.remove('host');$('#app').innerHTML=`<div class="phone"><div><p class="eyebrow">${esc(document.title)}</p><h1>🔑 Mando del profe</h1></div>
+  <div class="card" style="display:grid;gap:14px"><p class="muted" style="margin:0">En la pantalla de clase, pulsa «🔑 Móvil del profe» para ver el código de la sala y la clave.</p>
+  <div class="field"><label for="r-code">Código de la sala</label><input id="r-code" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 cifras"></div>
+  <div class="field"><label for="r-key">Clave del profe</label><input id="r-key" maxlength="8" autocomplete="off" autocapitalize="off" placeholder="6 letras o números"></div>
+  <p class="msg" id="rmsg">${esc(msg||'')}</p><button class="btn primary big" onclick="remoteGo()">Entrar</button><button class="btn ghost" onclick="vHome()">Volver</button></div></div>`}
+function remoteGo(){const c=$('#r-code').value.trim(),k=$('#r-key').value.trim().toLowerCase();if(!/^[1-3]\d{3}$/.test(c)){$('#rmsg').textContent='Escribe el código de 4 cifras.';return}if(!/^[a-z0-9]{4,8}$/.test(k)){$('#rmsg').textContent='Escribe la clave que aparece en la pantalla de clase.';return}
+  location.hash='p'+c+'-'+k;remoteStart(c,k)}
+function remoteStart(code,key){document.body.classList.remove('host');RM.code=code;RM.key=key;$('#app').innerHTML=`<div class="phone"><div class="state"><h2>Conectando el mando…</h2></div></div>`;
+  const i=+code[0]-1;connect(i,'p'+Math.random().toString(36).slice(2,8),cli=>{RM.cli=cli;cli.subscribe(T(code).host);
+    cli.on('message',(t,b)=>{const s=b.toString();if(!s){RM.st=null;rRender();return}let m;try{m=JSON.parse(s)}catch(e){return}if(m.t==='st'){RM.st=m;rRender()}});
+    cli.on('connect',()=>{try{cli.subscribe(T(code).host)}catch(e){}});
+    setTimeout(()=>{if(!RM.st)$('#app').innerHTML=`<div class="phone"><div class="state"><h2>No se encuentra la sala ${esc(code)}</h2><p class="muted" style="margin:0">Comprueba que la pantalla de clase tiene la sala abierta.</p><button class="btn" onclick="remoteForm()">Escribir el código</button></div></div>`},6500)},
+    err=>remoteForm(err),null,{max:i})}
+function rCmd(c){if(c=='end'&&!RM.arm){RM.arm=1;const b=$('#rend');if(b){b.textContent='¿Terminar ya? Pulsa otra vez';b.classList.add('arm')}setTimeout(()=>{RM.arm=0;const b=$('#rend');if(b){b.textContent='⏹ Terminar';b.classList.remove('arm')}},3500);return}
+  RM.arm=0;if(RM.cli&&RM.cli.connected){RM.cli.publish(T(RM.code).stu,JSON.stringify({t:'ctl',from:'profe',key:RM.key,cmd:c}),{qos:0});if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}}else toast('Sin conexión con la sala. Espera un momento.')}
+function rRender(){const m=RM.st,A=$('#app');let h=`<div class="ptop"><span>🔑 Mando · Sala ${esc(RM.code)}</span><span>${m&&m.n&&m.ph!='lobby'?(m.ph=='end'?'Final':'Pregunta '+(m.qi+1)+' / '+m.n):''}</span></div>`;
+  if(!m){A.innerHTML=`<div class="phone">${h}<div class="state"><h2>La sala está cerrada</h2></div></div>`;return}
+  const q=m.q,names=id=>{const p=m.pl.find(x=>x[0]===id);return p?p[1]:''},endB=`<button class="btn ghost" id="rend" onclick="rCmd('end')">⏹ Terminar</button>`;
+  if(m.ph=='lobby')h+=`<div class="state"><h2>${m.pl.length} ${m.pl.length==1?'persona conectada':'personas conectadas'}</h2><p class="muted" style="margin:0">${m.pl.map(x=>esc(x[1])).join(', ')||'Esperando a que entren los móviles…'}</p><button class="btn primary big" onclick="rCmd('start')">Empezar ▶</button></div>`;
+  else if(q&&(m.ph=='q'||m.ph=='reveal'||m.ph=='rank')){const c=qCorrect(q),miss=m.pl.filter(x=>!m.done.includes(x[0])).map(x=>x[1]),right=m.res?Object.values(m.res).filter(r=>r[0]).length:0;
+    h+=`<p class="pprompt">${qPrompt(q)}</p><div class="answerbox"><p class="eyebrow" style="margin:0">✅ Respuesta correcta</p>
+      <div class="paper">${stf(qNotes(q),q.ki,1)}</div>
+      ${isBuild(q)?`<p class="big-ans">${qNotes(q).slice().sort((a,b)=>a.s-b.s).map(nn).join(' – ')}</p>`:`<div class="tile t${c%6}"><i class="shp">${SHAPES[c%6]}</i><span>${qOpts(q)[c]}</span></div>`}
+      <p class="muted" style="margin:0;font-size:.95rem">${qExp(q)}</p></div>`;
+    if(m.ph=='q')h+=`<p style="margin:0"><b>${m.done.length}</b> de ${m.pl.length} han respondido${miss.length?`<br><span class="muted">Faltan: ${miss.map(esc).join(', ')}</span>`:''}</p>
+      <div class="row"><button class="btn primary big grow" onclick="rCmd('close')">${typeof closeQ=='function'?'Cerrar y corregir ✔':'Corregir ✔'}</button><button class="btn" onclick="rCmd('hear')">🔊</button>${endB}</div>`;
+    else h+=`<p style="margin:0"><b>${right}</b> de ${m.pl.length} ${right==1?'ha acertado':'han acertado'}</p><div class="row"><button class="btn primary big grow" onclick="rCmd('next')">${m.ph=='reveal'&&typeof closeQ=='function'?'Clasificación ▶':m.qi+1>=m.n?'Ver el podio 🏆':'Siguiente ▶'}</button>${endB}</div>`}
+  else if(m.ph=='end'){const top=m.pl.slice().sort((a,b)=>b[3]-a[3]).slice(0,5);h+=`<div class="state"><h2>🏆 Fin</h2>${top.map((x,i)=>`<p style="margin:0">${i+1}.º <b>${esc(x[1])}</b> · ${x[3]} puntos</p>`).join('')}<p class="muted" style="margin:0">Para exportar a Excel o empezar otra ronda, usa la pantalla de clase.</p></div>`}
+  A.innerHTML=`<div class="phone">${h}</div>`}
+
+</script>
+</body>
+</html>
